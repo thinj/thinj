@@ -1,0 +1,2 @@
+This is the thinj tool. Build it using 'build.sh'.
+Depends on bcel 5.2 (http://commons.apache.org/bcel)
