@@ -287,19 +287,24 @@ public class NewLinker {
 			if (referencedClass.startsWith("[")) {
 				classInSuite = loadArray(referencedClass);
 			} else {
-				InputStream is = aClassReader.getClassFileReader(referencedClass);
-				JavaClass jc = null;
-				JavaClass superClass = null;
-				JavaClass[] allInterfaces = null;
-				try {
-					jc = new ClassParser(is, referencedClass).parse();
-					superClass = jc.getSuperClass();
-					allInterfaces = jc.getAllInterfaces();
-				} catch (Exception e) {
-					System.err.println("Failed loading class: " + referencedClass);
-					e.printStackTrace();
-					System.exit(1);
-				}
+				// InputStream is = aClassReader.getClassFileReader(referencedClass);
+				// JavaClass jc = null;
+				// JavaClass superClass = null;
+				// JavaClass[] allInterfaces = null;
+				// try {
+				// jc = new ClassParser(is, referencedClass).parse();
+				// superClass = jc.getSuperClass();
+				// allInterfaces = jc.getAllInterfaces();
+				// } catch (Exception e) {
+				// System.err.println("Failed loading class: " + referencedClass);
+				// e.printStackTrace();
+				// System.exit(1);
+				// }
+				// NYT
+				JavaClass jc = readClassFromFile(referencedClass);
+				JavaClass superClass = readClassFromFile(jc.getSuperclassName());
+				JavaClass[] allInterfaces = readClassesFromFiles(jc.getInterfaceNames());
+				// NYT
 
 				boolean isJavaLangObject = referencedClass.equals("java/lang/Object");
 				// Register the class in our model:
@@ -347,6 +352,39 @@ public class NewLinker {
 			}
 		}
 		return classInSuite;
+	}
+
+	/**
+	 * This method reads an array JavaClass from some .class files
+	 * 
+	 * @param interfaceNames The names of the classes
+	 * @return The read JavaClass'es. If unable to read, this method exits.
+	 */
+	private JavaClass[] readClassesFromFiles(String[] interfaceNames) {
+		LinkedList<JavaClass> l = new LinkedList<JavaClass>();
+		for (String name : interfaceNames) {
+			l.add(readClassFromFile(name));
+		}
+
+		return l.toArray(new JavaClass[l.size()]);
+	}
+
+	/**
+	 * This method reads a JavaClass from a .class file
+	 * 
+	 * @param referencedClass The name of the class
+	 * @return The read JavaClass. If unable to read, this method exits.
+	 */
+	private JavaClass readClassFromFile(String referencedClass) {
+		InputStream is = aClassReader.getClassFileReader(ClassInSuite
+				.getGlobalName(referencedClass));
+		JavaClass jc = null;
+		try {
+			jc = new ClassParser(is, referencedClass).parse();
+		} catch (Exception e) {
+			exit("Failed loading class: " + referencedClass, 1);
+		}
+		return jc;
 	}
 
 	/**

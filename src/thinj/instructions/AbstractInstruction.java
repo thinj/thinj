@@ -57,6 +57,7 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0x10, I_bipush.class);
 		aInstructions.put(0x11, I_sipush.class);
 		aInstructions.put(0x12, I_ldc.class);
+		aInstructions.put(0x13, I_ldc_w.class);
 
 		aInstructions.put(0x15, I_iload.class);
 
@@ -460,7 +461,7 @@ public abstract class AbstractInstruction {
 	 * @param code The code to transform
 	 * @return The code using the optimised member references only.
 	 */
-	public static byte[] renumberMemberReferences(int classId, byte[] code){
+	public static byte[] renumberMemberReferences(int classId, byte[] code) {
 		ByteArrayInputStream bais = new ByteArrayInputStream(code);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		while (bais.available() > 0) {
@@ -579,17 +580,24 @@ public abstract class AbstractInstruction {
 		}
 	}
 
-	public static class I_ldc extends AbstractInstruction {
-		public I_ldc() {
-			super(2);
+	public static abstract class Abstract_ldc extends AbstractInstruction {
+		/**
+		 * Constructor
+		 * 
+		 * @param size The size of the instruction
+		 */
+		public Abstract_ldc(int size) {
+			super(size);
 		}
+
+		protected abstract int getLDCReference();
 
 		@Override
 		public void registerDependencies(LinkModel linkModel, int referencingClassId,
 				MethodInClass mic, IntInABox constantPoolLength) {
 			super.registerDependencies(linkModel, referencingClassId, mic, constantPoolLength);
 			// If the referenced item is a class ref this shall be marked as a dependency:
-			int cpIx = getOneByteReference(1);
+			int cpIx = getLDCReference();
 			boolean found = false;
 
 			if (!found) {
@@ -646,6 +654,28 @@ public abstract class AbstractInstruction {
 			}
 
 			return found;
+		}
+	}
+
+	public static class I_ldc extends Abstract_ldc {
+		public I_ldc() {
+			super(2);
+		}
+
+		@Override
+		protected int getLDCReference() {
+			return getOneByteReference(1);
+		}
+	}
+
+	public static class I_ldc_w extends Abstract_ldc {
+		public I_ldc_w() {
+			super(3);
+		}
+
+		@Override
+		protected int getLDCReference() {
+			return getReference(1);
 		}
 	}
 
