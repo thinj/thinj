@@ -59,4 +59,6 @@ fi
 
 java -cp $THINJ_HOME/lib/thinj.jar:$CLASSPATH $MYCP $DEP $OUT thinj.NewLinker $1 || exit 1 
 
-gcc -o $outputName -pg -I$THINJ_HOME/inc  -L$THINJ_HOME/lib  $outputName.c -l thinjvm 
+gcc -o $outputName -pg -I$THINJ_HOME/inc  -L$THINJ_HOME/lib  $outputName.c -l thinjvm
+# gcc -o $outputName -I$THINJ_HOME/inc  -L$THINJ_HOME/lib  $outputName.c -l thinjvm
+ 

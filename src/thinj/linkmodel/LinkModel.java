@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import thinj.NewLinker;
+import thinj.instructions.AbstractInstruction;
+import thinj.instructions.InstructionHandler;
+
 public class LinkModel {
 	// Singleton instance:
 	private static LinkModel aInstance;
@@ -71,7 +75,7 @@ public class LinkModel {
 		if (aInstance == null) {
 			aInstance = new LinkModel();
 		}
-		return aInstance; 		
+		return aInstance;
 	}
 
 	/**
@@ -1066,12 +1070,32 @@ public class LinkModel {
 			}
 		}
 
-		for (MemberReference mr : aMemberReferenceTranslationMap.keySet()) {
-			MemberReference un = aMemberReferenceTranslationMap.get(mr);
-			System.out.println("" + mr.getClassId() + "." + mr.getConstantPoolIndex() + ":"
-					+ mr.getReferencedClassId() + "." + mr.getLinkId() + "->" + un.getClassId()
-					+ "." + un.getConstantPoolIndex() + ":" + un.getReferencedClassId() + "."
-					+ un.getLinkId());
+		// for (MemberReference mr : aMemberReferenceTranslationMap.keySet()) {
+		// MemberReference un = aMemberReferenceTranslationMap.get(mr);
+		// System.out.println("" + mr.getClassId() + "." + mr.getConstantPoolIndex() + ":"
+		// + mr.getReferencedClassId() + "." + mr.getLinkId() + "->" + un.getClassId()
+		// + "." + un.getConstantPoolIndex() + ":" + un.getReferencedClassId() + "."
+		// + un.getLinkId());
+		// }
+
+		for (MethodInClass mic : getAllMethods()) {
+			if (mic.isReferenced() && mic.getType() != MethodInClass.Type.AbstractMethod) {
+				renumberMethodReferences(mic);
+			}
+		}
+	}
+
+	/**
+	 * This method renumbers method references in code for a single method.
+	 * 
+	 * @param mic The method for which the code shall be renumbered
+	 */
+	private void renumberMethodReferences(final MethodInClass mic) {
+		byte[] ba = mic.getCode();
+		if (ba.length > 0) {
+			ClassInSuite cis = getClassByName(mic.getMember().getClassName());
+			ba = AbstractInstruction.renumberMemberReferences(cis.getClassId(), ba);
+			mic.setCode(ba);
 		}
 	}
 
@@ -1230,5 +1254,29 @@ public class LinkModel {
 	 */
 	public int getTotalClassCount() {
 		return aClasses.size();
+	}
+
+	/**
+	 * This method translates a non-optimised reference to an optimised ditto
+	 * 
+	 * @param referencingClassId
+	 * @param constantPoolIndex
+	 * @return
+	 */
+	public MemberReference getOptimizedReference(int referencingClassId, int constantPoolIndex) {
+		MemberReference retval = null;
+		for (MemberReference mr : aMemberReferenceTranslationMap.keySet()) {
+			if (mr.getClassId() == referencingClassId
+					&& mr.getConstantPoolIndex() == constantPoolIndex) {
+				retval = aMemberReferenceTranslationMap.get(mr);
+			}
+		}
+
+		if (retval == null) {
+			NewLinker.exit("Cannot translate reference: " + referencingClassId + "."
+					+ constantPoolIndex, 1);
+		}
+
+		return retval;
 	}
 }

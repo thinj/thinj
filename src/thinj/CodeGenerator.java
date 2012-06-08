@@ -533,37 +533,14 @@ public class CodeGenerator {
 		sectionHeader(aSuite, "Method References");
 
 		for (int referencingClassId = 0; referencingClassId < aLinkModel.getTotalClassCount(); referencingClassId++) {
-			MemberReference[] methodRefs = aLinkModel.getAllMethodReferences(referencingClassId);
+			// Optimized refs:
+			MemberReference[] methodRefs = aLinkModel.getOptimizedMethodReferences(referencingClassId);
 			int prevClassId = -1;
 			ConstantPoolEntry cp = getConstantPoolEntry(referencingClassId);
 			cp.setMethodReferencesLength(methodRefs.length);
 			if (methodRefs.length > 0) {
-				aSuite.println("const memberReference const " + cp.getMethodReferences() + "[] = {");
-				for (MemberReference ref : methodRefs) {
-					if (!ref.isReferenced()) {
-						NewLinker.exit("unref'ed MemberReference: " + ref, 1);
-					}
-					int argCount = aLinkModel.getArgumentCount(ref.getSignature());
-					if (prevClassId != ref.getClassId()) {
-						prevClassId = ref.getClassId();
-					}
-					aSuite.println("    {" + ref.getClassId() + ", " + ref.getConstantPoolIndex()
-							+ ", " + ref.getReferencedClassId() + ", " + ref.getLinkId() + ", "
-							+ argCount + "}, // " + ref.getReferencedClassName() + "#"
-							+ ref.getSignature().format());
-				}
-				aSuite.println("};");
-				aSuite.println();
-			}
-			
-			// Optimized refs:
-			methodRefs = aLinkModel.getOptimizedMethodReferences(referencingClassId);
-			prevClassId = -1;
-			cp = getConstantPoolEntry(referencingClassId);
-			cp.setMethodReferencesLength(methodRefs.length);
-			if (methodRefs.length > 0) {
 				aSuite.println("const memberReference const " + cp.getMethodReferences()
-						+ "__[] = {");
+						+ "[] = {");
 				for (MemberReference ref : methodRefs) {
 					// if (!ref.isReferenced()) {
 					// NewLinker.exit("unref'ed MemberReference: " + ref, 1);

@@ -16,7 +16,7 @@ import thinj.BuildinDependency;
 public class MethodInClass extends MethodOrField {
 	private final int aNumberofLocalVariables;
 	private final int aNumberOfArguments;
-	private final byte[] aCode;
+	private byte[] aCode;
 	private final Type aType;
 	private int aCodeOffset;
 	private final LinkedList<LineNumber> aLineNumbers;
@@ -365,7 +365,7 @@ public class MethodInClass extends MethodOrField {
 			// }
 			cref.referenced();
 		}
-		
+
 		for (ConstantReference<?> conRef : aConstantReferences) {
 			conRef.referenced();
 		}
@@ -376,4 +376,12 @@ public class MethodInClass extends MethodOrField {
 		// }
 	}
 
+	/**
+	 * This method sets the code - to be used as a result of code optimisation
+	 * 
+	 * @param code The new code
+	 */
+	public void setCode(byte[] code) {
+		aCode = code;
+	}
 }

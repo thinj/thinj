@@ -457,18 +457,14 @@ public abstract class AbstractInstruction {
 	 * searching in the set of member references
 	 * 
 	 * @param classId The id of the class containing the code
-	 * @param address The address of the first instruction
 	 * @param code The code to transform
 	 * @return The code using the optimised member references only.
 	 */
-	public static byte[] renumberMemberReferences(int classId, int address, byte[] code,
-			InstructionHandler handler) {
+	public static byte[] renumberMemberReferences(int classId, byte[] code){
 		ByteArrayInputStream bais = new ByteArrayInputStream(code);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		while (bais.available() > 0) {
 			try {
-				// int addr = address + code.length - bais.available();
-
 				AbstractInstruction ins = AbstractInstruction.readFrom(bais);
 				ins.renumberReference(classId, baos);
 			} catch (IOException e) {
@@ -1122,12 +1118,12 @@ public abstract class AbstractInstruction {
 
 		@Override
 		protected void renumberReference(int referencingClassId, ByteArrayOutputStream baos) {
-			// TODO Auto-generated method stub
 			int constantPoolIndex = getReference(1);
-			MemberReference x = LinkModel.getInstance().getOptimizedReference(referencingClassId, constantPoolIndex);
+			MemberReference mref = LinkModel.getInstance().getOptimizedReference(
+					referencingClassId, constantPoolIndex);
 			baos.write(aCode[0]);
-			baos.write(x.getConstantPoolIndex() >> 8);
-			baos.write(x.getConstantPoolIndex() & 0xff);
+			baos.write(mref.getConstantPoolIndex() >> 8);
+			baos.write(mref.getConstantPoolIndex() & 0xff);
 			for (int i = 3; i < aCode.length; i++) {
 				baos.write(aCode[i]);
 			}
