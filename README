@@ -1,2 +1,23 @@
-This is the thinj tool. Build it using 'build.sh'.
-Depends on bcel 5.2 (http://commons.apache.org/bcel)
+thinj
+=====
+
+thinj is a 'linker' that converts a bunch of java class files to a self contained binary. 
+
+Building
+========
+
+To build all the artifacts:
+
+thinjrt/build.sh
+thinjvm/build.sh
+thinj/build.sh
+thinjregression/build.sh
+
+When all these have succeeded, a binary 'alltests' can be found in thinjregression. 
+This binary will run the regression suite.
+
+Dependencies
+============
+thinj Depends on:
+* j2sdk 1.6.0
+* bcel 5.2 (http://commons.apache.org/bcel)
