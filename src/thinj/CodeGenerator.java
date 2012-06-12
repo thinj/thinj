@@ -307,11 +307,13 @@ public class CodeGenerator {
 				aHeader.println("#define " + generateClassIdMacro(cis.getClassName()) + " "
 						+ cis.getClassId());
 
-				aSuite.println(String.format("    {%4d,%4d,%4d,%4d,%4d, %-16s%4d, %-16s}, // %s",
-						cis.getClassId(), superClassId, instanceSize, interfaceCount,
+				aSuite.println(String.format("    {%4d,%4d,%4d,%4d, %-16s%4d, %-16s}, // %d:%s",
+						superClassId, instanceSize, interfaceCount,
 						cis.getImplementedInterfaces().length,
 						String.format("%s,", cis.getClassType().getClassTypeName()),
-						elementClassId, elementSize, cis.getClassName()));
+						elementClassId, elementSize,
+						cis.getClassId(), 
+						cis.getClassName()));
 
 				// ClassInstanceInfoDef def = new ClassInstanceInfoDef(cis.getClassId(),
 				// superClassId,
