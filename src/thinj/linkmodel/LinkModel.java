@@ -10,7 +10,6 @@ import java.util.TreeSet;
 
 import thinj.NewLinker;
 import thinj.instructions.AbstractInstruction;
-import thinj.instructions.InstructionHandler;
 
 public class LinkModel {
 	// Singleton instance:
@@ -470,15 +469,16 @@ public class LinkModel {
 	}
 
 	/**
-	 * This method returns all unique references to methods referenced by the class identified by
-	 * 'referencingClassId'. The return value will be sorted in ascending order of (constant pool
-	 * index)
+	 * This method returns all unique references to methods or fields referenced by the class
+	 * identified by 'referencingClassId'. The return value will be sorted in ascending order of
+	 * (constant pool index)
 	 * 
-	 * @param referencingClassId
-	 * @return MemberReference[] all unique references to methods for class identified by
+	 * @param referencingClassId Identifies the referencing class
+	 * @param type The type of requested MemberReferences
+	 * @return MemberReference[] all unique references to methods or fields for class identified by
 	 *         'referencingClassId'
 	 */
-	public MemberReference[] getAllMethodReferences(int referencingClassId) {
+	private MemberReference[] getAllReferences(int referencingClassId, MemberReferenceTypeEnum type) {
 		TreeSet<MemberReference> ts = new TreeSet<MemberReference>(
 				new Comparator<MemberReference>() {
 					@Override
@@ -492,8 +492,11 @@ public class LinkModel {
 				});
 
 		for (MemberReference ref : aMemberReferences) {
-			// Do only add method references:
-			if (ref.getSignature().isMethod() && ref.getClassId() == referencingClassId) {
+			// Do only add selected references:
+			boolean typeOk = (ref.getSignature().isMethod() && type == MemberReferenceTypeEnum.METHOD)
+					|| (!ref.getSignature().isMethod() && type == MemberReferenceTypeEnum.FIELD);
+
+			if (typeOk && ref.getClassId() == referencingClassId) {
 				ts.add(ref);
 			}
 		}
@@ -567,6 +570,32 @@ public class LinkModel {
 		}
 		return ts.toArray(new MethodInClass[ts.size()]);
 	}
+	
+	/**
+	 * This method returns all fields implemented by the class identified by 'classId'
+	 * 
+	 * @param classId identifies the class
+	 * @return All fields sorted by link id
+	 */
+	public FieldInClass[] getClassFields(int classId) {
+		TreeSet<FieldInClass> ts = new TreeSet<FieldInClass>(new Comparator<FieldInClass>() {
+			@Override
+			public int compare(FieldInClass o1, FieldInClass o2) {
+				return o1.getLinkId() - o2.getLinkId();
+			}
+		});
+		for (MethodOrField mof : aMembers) {
+			if (mof instanceof FieldInClass) {
+				FieldInClass fic = (FieldInClass) mof;
+				int fieldClassId = getClassIdByName(fic.getMember().getClassName());
+				if (fieldClassId == classId) {
+					ts.add(fic);
+				}
+			}
+		}
+		return ts.toArray(new FieldInClass[ts.size()]);
+	}
+
 
 	/**
 	 * This method returns the referenced member from a class. If not found in the indicated class,
@@ -701,10 +730,8 @@ public class LinkModel {
 			}
 		}
 		if (matchMic == null) {
-			System.err.println("Internal error: Failed to find matching method for signature: "
-					+ signature);
-			new Exception().printStackTrace();
-			System.exit(1);
+			NewLinker.exit("Internal error: Failed to find matching method for signature: "
+					+ signature, 1);
 		}
 
 		return matchMic.getNumberOfArguments();
@@ -1019,7 +1046,14 @@ public class LinkModel {
 	public void optimize() {
 		removeUnreferencedItems();
 		renumberAllClassIds();
+		optimizeMemberReferences();
+	}
 
+	/**
+	 * This method optimises the member references so the constant pool lookup can be done using
+	 * array indexing in stead of searching.
+	 */
+	private void optimizeMemberReferences() {
 		aMemberReferenceTranslationMap = new TreeMap<MemberReference, MemberReference>(
 				new Comparator<MemberReference>() {
 					@Override
@@ -1035,39 +1069,13 @@ public class LinkModel {
 					}
 				});
 		// For each class find set of unique method references:
-		for (int referencingClassid = 0; referencingClassid < getTotalClassCount(); referencingClassid++) {
-			// Set of unique references (well, use a map so we can 'get()' them again):
-			TreeMap<MemberReference, MemberReference> uniqueCollection = new TreeMap<MemberReference, MemberReference>(
-					new Comparator<MemberReference>() {
-						@Override
-						public int compare(MemberReference o1, MemberReference o2) {
-							// 'Unique' references are identified by:
-							// getClassId(), getReferencedClassId(), getLinkId()
-							// If diff is zero, the two member references refer to the same member:
-							int diff = o1.getReferencedClassId() - o2.getReferencedClassId();
-							if (diff == 0) {
-								diff = o1.getLinkId() - o2.getLinkId();
-							}
-							return diff;
-						}
-					});
+		for (int referencingClassId = 0; referencingClassId < getTotalClassCount(); referencingClassId++) {
+			MemberReference[] allRefs = getAllReferences(referencingClassId,
+					MemberReferenceTypeEnum.METHOD);
+			optimizeMemberReferencesForClass(referencingClassId, allRefs);
 
-			int newConstantpoolIndex = 0;
-			MemberReference[] allRefs = getAllMethodReferences(referencingClassid);
-
-			// Build collection of unique references:
-			for (MemberReference ref : allRefs) {
-				MemberReference uniqueRef = uniqueCollection.get(ref);
-				if (uniqueRef == null) {
-					uniqueRef = new MemberReference(ref.getReferencedClassName(),
-							ref.getSignature(), referencingClassid, newConstantpoolIndex);
-					uniqueRef.setLinkId(ref.getLinkId());
-					uniqueRef.setReferencedClassId(ref.getReferencedClassId());
-					uniqueCollection.put(uniqueRef, uniqueRef);
-					newConstantpoolIndex++;
-				}
-				aMemberReferenceTranslationMap.put(ref, uniqueRef);
-			}
+			allRefs = getAllReferences(referencingClassId, MemberReferenceTypeEnum.FIELD);
+			optimizeMemberReferencesForClass(referencingClassId, allRefs);
 		}
 
 		// for (MemberReference mr : aMemberReferenceTranslationMap.keySet()) {
@@ -1080,8 +1088,42 @@ public class LinkModel {
 
 		for (MethodInClass mic : getAllMethods()) {
 			if (mic.isReferenced() && mic.getType() != MethodInClass.Type.AbstractMethod) {
-				renumberMethodReferences(mic);
+				renumberReferentialInstructions(mic);
 			}
+		}
+	}
+
+	private void optimizeMemberReferencesForClass(int referencingClassId, MemberReference[] allRefs) {
+		// Set of unique references (well, use a map so we can 'get()' them again):
+		TreeMap<MemberReference, MemberReference> uniqueCollection = new TreeMap<MemberReference, MemberReference>(
+				new Comparator<MemberReference>() {
+					@Override
+					public int compare(MemberReference o1, MemberReference o2) {
+						// 'Unique' references are identified by:
+						// getClassId(), getReferencedClassId(), getLinkId()
+						// If diff is zero, the two member references refer to the same member:
+						int diff = o1.getReferencedClassId() - o2.getReferencedClassId();
+						if (diff == 0) {
+							diff = o1.getLinkId() - o2.getLinkId();
+						}
+						return diff;
+					}
+				});
+
+		int newConstantpoolIndex = 0;
+
+		// Build collection of unique references:
+		for (MemberReference ref : allRefs) {
+			MemberReference uniqueRef = uniqueCollection.get(ref);
+			if (uniqueRef == null) {
+				uniqueRef = new MemberReference(ref.getReferencedClassName(), ref.getSignature(),
+						referencingClassId, newConstantpoolIndex);
+				uniqueRef.setLinkId(ref.getLinkId());
+				uniqueRef.setReferencedClassId(ref.getReferencedClassId());
+				uniqueCollection.put(uniqueRef, uniqueRef);
+				newConstantpoolIndex++;
+			}
+			aMemberReferenceTranslationMap.put(ref, uniqueRef);
 		}
 	}
 
@@ -1090,7 +1132,7 @@ public class LinkModel {
 	 * 
 	 * @param mic The method for which the code shall be renumbered
 	 */
-	private void renumberMethodReferences(final MethodInClass mic) {
+	private void renumberReferentialInstructions(final MethodInClass mic) {
 		byte[] ba = mic.getCode();
 		if (ba.length > 0) {
 			ClassInSuite cis = getClassByName(mic.getMember().getClassName());
@@ -1104,10 +1146,13 @@ public class LinkModel {
 	 * identified by 'referencingClassId'
 	 * 
 	 * @param referencingClassId The class using the references
+	 * @param type The type of MemberReferences requested
 	 * @return A sorted array of member references. At position 'n' the MemberReference with
 	 *         constant pool index 'n' is situated.
 	 */
-	public MemberReference[] getOptimizedMethodReferences(int referencingClassId) {
+	public MemberReference[] getOptimizedReferences(int referencingClassId,
+			MemberReferenceTypeEnum type) {
+		// Return values sorted by increasing constant pool reference:
 		TreeSet<MemberReference> set = new TreeSet<MemberReference>(
 				new Comparator<MemberReference>() {
 					@Override
@@ -1116,8 +1161,11 @@ public class LinkModel {
 						return diff;
 					}
 				});
+		// Hrmmm... this is candidate for optimization ;-|
 		for (MemberReference mr : aMemberReferenceTranslationMap.values()) {
-			if (mr.getClassId() == referencingClassId) {
+			boolean typeOk = (mr.getSignature().isMethod() && type == MemberReferenceTypeEnum.METHOD)
+					|| (!mr.getSignature().isMethod() && type == MemberReferenceTypeEnum.FIELD);
+			if (mr.getClassId() == referencingClassId && typeOk) {
 				set.add(mr);
 			}
 		}
@@ -1279,4 +1327,5 @@ public class LinkModel {
 
 		return retval;
 	}
+
 }

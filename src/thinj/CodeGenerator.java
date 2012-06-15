@@ -21,6 +21,7 @@ import thinj.linkmodel.FieldInClass;
 import thinj.linkmodel.LinkModel;
 import thinj.linkmodel.Member;
 import thinj.linkmodel.MemberReference;
+import thinj.linkmodel.MemberReferenceTypeEnum;
 import thinj.linkmodel.MethodInClass;
 
 /**
@@ -134,7 +135,8 @@ public class CodeGenerator {
 		aSuite.println("const constantPool const allConstantPools[] = {");
 		for (int classId = 0; classId < aLinkModel.getTotalClassCount(); classId++) {
 			ConstantPoolEntry cp = aConstantPools.get(classId);
-			// Method referecens:
+			aSuite.println("    // " + classId + ": " + aLinkModel.getClassById(classId).getClassName());
+			// Method references:
 			String s = cp.getMethodReferencesLength() == 0 ? "NULL" : cp.getMethodReferences();
 			aSuite.print("    {" + s + ", " + cp.getMethodReferencesLength());
 
@@ -142,7 +144,15 @@ public class CodeGenerator {
 			s = cp.getNumberOfMethods() == 0 ? "NULL" : cp.getMethodsInClass();
 			aSuite.print(", " + s + ", " + cp.getNumberOfMethods());
 
-			aSuite.println("}, // " + aLinkModel.getClassById(classId).getClassName());
+			// Field references:
+			s = cp.getFieldReferencesLength() == 0 ? "NULL" : cp.getFieldReferences();
+			aSuite.print(", " + s + ", " + cp.getFieldReferencesLength());
+
+			// Field instances:
+			s = cp.getNumberOfFields() == 0 ? "NULL" : cp.getFieldsInClass();
+			aSuite.print(", " + s + ", " + cp.getNumberOfFields());
+
+			aSuite.println("},");
 		}
 		aSuite.println("};");
 	}
@@ -311,9 +321,7 @@ public class CodeGenerator {
 						superClassId, instanceSize, interfaceCount,
 						cis.getImplementedInterfaces().length,
 						String.format("%s,", cis.getClassType().getClassTypeName()),
-						elementClassId, elementSize,
-						cis.getClassId(), 
-						cis.getClassName()));
+						elementClassId, elementSize, cis.getClassId(), cis.getClassName()));
 
 				// ClassInstanceInfoDef def = new ClassInstanceInfoDef(cis.getClassId(),
 				// superClassId,
@@ -482,46 +490,97 @@ public class CodeGenerator {
 	private void dumpFields() {
 		sectionHeader(aSuite, "Field references");
 
-		MemberReference[] fieldRefs = aLinkModel.getAllFieldReferences();
-		aSuite.println("const u2 numberOfAllFieldReferences = " + fieldRefs.length + ";");
-		aSuite.println("const memberReference const allFieldReferences[] = {");
-		int prevClassId = -1;
-		for (MemberReference ref : fieldRefs) {
-			if (prevClassId != ref.getClassId()) {
-				aSuite.println("    // Class Id: " + ref.getClassId());
-				prevClassId = ref.getClassId();
+		// MemberReference[] fieldRefs = aLinkModel.getAllFieldReferences();
+		// aSuite.println("const u2 numberOfAllFieldReferences = " + fieldRefs.length + ";");
+		// aSuite.println("const memberReference const allFieldReferences[] = {");
+		// int prevClassId = -1;
+		// for (MemberReference ref : fieldRefs) {
+		// if (prevClassId != ref.getClassId()) {
+		// aSuite.println("    // Class Id: " + ref.getClassId());
+		// prevClassId = ref.getClassId();
+		// }
+		// // aSuite.println("    {" + ref.getClassId() + ", " + ref.getConstantPoolIndex() + ", "
+		// aSuite.println("    {" + ref.getClassId() + ", " + ref.getConstantPoolIndex() + ", "
+		// + ref.getReferencedClassId() + ", " + ref.getLinkId() + "}, // "
+		// + ref.getReferencedClassName() + "->" + ref.getSignature());
+		// }
+		// aSuite.println("};");
+
+		for (int referencingClassId = 0; referencingClassId < aLinkModel.getTotalClassCount(); referencingClassId++) {
+			// Optimised refs:
+			MemberReference[] fieldRefs = aLinkModel.getOptimizedReferences(referencingClassId,
+					MemberReferenceTypeEnum.FIELD);
+			ConstantPoolEntry cp = getConstantPoolEntry(referencingClassId);
+			cp.setFieldReferencesLength(fieldRefs.length);
+			if (fieldRefs.length > 0) {
+				aSuite.println("const memberReference const " + cp.getFieldReferences() + "[] = {");
+				for (MemberReference ref : fieldRefs) {
+					aSuite.println("    {" + 
+							+ ref.getReferencedClassId() + ", " + ref.getLinkId() + "}, // "
+							+ ref.getConstantPoolIndex() + ": "
+							+ ref.getReferencedClassName() + "#" + ref.getSignature().format());
+				}
+				aSuite.println("};");
+				aSuite.println();
 			}
-			aSuite.println("    {" + ref.getClassId() + ", " + ref.getConstantPoolIndex() + ", "
-					+ ref.getReferencedClassId() + ", " + ref.getLinkId() + "}, // "
-					+ ref.getReferencedClassName() + "->" + ref.getSignature());
 		}
-		aSuite.println("};");
 
 		sectionHeader(aSuite, "Field properties");
 
-		int count = 0;
-		FieldInClass[] fields = aLinkModel.getAllFields();
+		// Size of all static memory:
 		int staticSize = 0;
-		aSuite.println("const fieldInClass const allFields[] = {");
-		// prevClassId = -1;
-		for (FieldInClass fic : fields) {
-			if (fic.isReferenced()) {
-				count++;
-				int classId = aLinkModel.getClassIdByName(fic.getMember().getClassName());
-				// if (prevClassId != classId) {
-				// aSuite.println("    // Class Id: " + classId);
-				// prevClassId = classId;
-				// }
-				aSuite.println("   {" + classId + ", " + fic.getLinkId() + ", " + fic.getAddress()
-						+ ", " + fic.getSize() + "}, // " + fic.getLinkId() + "-"
-						+ fic.getMember().format());
-				if (fic.isStatic()) {
-					staticSize += fic.getSize();
+
+		for (int classId = 0; classId < aLinkModel.getTotalClassCount(); classId++) {
+			ConstantPoolEntry cp = aConstantPools.get(classId);
+
+			// Dump all fields for this class Id:
+			FieldInClass[] fields = aLinkModel.getClassFields(classId);
+			cp.setNumberOfFields(fields.length);
+			if (fields.length > 0) {
+				aSuite.println("const fieldInClass const " + cp.getFieldsInClass() + "[] = {");
+				for (FieldInClass fic : fields) {
+					if (!fic.isReferenced()) {
+						NewLinker.exit("Unreferenced field: " + fic, 1);
+					}
+
+					// Dump field info:
+					// TODO generateMemberMapping(fic);
+
+					aSuite.println("   {" + classId + ", " + fic.getLinkId() + ", "
+							+ fic.getAddress() + ", " + fic.getSize() + "}, // " + fic.getLinkId()
+							+ "-" + fic.getMember().format());
+					if (fic.isStatic()) {
+						staticSize += fic.getSize();
+					}
 				}
+				aSuite.println("};");
+				aSuite.println();
 			}
 		}
-		aSuite.println("};");
-		aSuite.println("const u2 numberOfAllFields = " + count + ";");
+
+		// int count = 0;
+		// FieldInClass[] fields = aLinkModel.getAllFields();
+		// int staticSize = 0;
+		// aSuite.println("const fieldInClass const allFields[] = {");
+		// // prevClassId = -1;
+		// for (FieldInClass fic : fields) {
+		// if (fic.isReferenced()) {
+		// count++;
+		// int classId = aLinkModel.getClassIdByName(fic.getMember().getClassName());
+		// // if (prevClassId != classId) {
+		// // aSuite.println("    // Class Id: " + classId);
+		// // prevClassId = classId;
+		// // }
+		// aSuite.println("   {" + classId + ", " + fic.getLinkId() + ", " + fic.getAddress()
+		// + ", " + fic.getSize() + "}, // " + fic.getLinkId() + "-"
+		// + fic.getMember().format());
+		// if (fic.isStatic()) {
+		// staticSize += fic.getSize();
+		// }
+		// }
+		// }
+		// aSuite.println("};");
+		// aSuite.println("const u2 numberOfAllFields = " + count + ";");
 
 		sectionHeader(aSuite, "Static Memory");
 		aSuite.println("const int staticMemorySize = " + staticSize + ";");
@@ -536,24 +595,18 @@ public class CodeGenerator {
 
 		for (int referencingClassId = 0; referencingClassId < aLinkModel.getTotalClassCount(); referencingClassId++) {
 			// Optimized refs:
-			MemberReference[] methodRefs = aLinkModel.getOptimizedMethodReferences(referencingClassId);
-			int prevClassId = -1;
+			MemberReference[] methodRefs = aLinkModel.getOptimizedReferences(referencingClassId,
+					MemberReferenceTypeEnum.METHOD);
 			ConstantPoolEntry cp = getConstantPoolEntry(referencingClassId);
 			cp.setMethodReferencesLength(methodRefs.length);
 			if (methodRefs.length > 0) {
-				aSuite.println("const memberReference const " + cp.getMethodReferences()
-						+ "[] = {");
+				aSuite.println("const memberReference const " + cp.getMethodReferences() + "[] = {");
 				for (MemberReference ref : methodRefs) {
-					// if (!ref.isReferenced()) {
-					// NewLinker.exit("unref'ed MemberReference: " + ref, 1);
-					// }
 					int argCount = aLinkModel.getArgumentCount(ref.getSignature());
-					if (prevClassId != ref.getClassId()) {
-						prevClassId = ref.getClassId();
-					}
-					aSuite.println("    {" + ref.getClassId() + ", " + ref.getConstantPoolIndex()
-							+ ", " + ref.getReferencedClassId() + ", " + ref.getLinkId() + ", "
-							+ argCount + "}, // " + ref.getReferencedClassName() + "#"
+					aSuite.println("    {" 
+							+ ref.getReferencedClassId() + ", " + ref.getLinkId() + ", "
+							+ argCount + "}, // " + ref.getConstantPoolIndex() + ": "  
+							+ ref.getReferencedClassName() + "#"
 							+ ref.getSignature().format());
 				}
 				aSuite.println("};");

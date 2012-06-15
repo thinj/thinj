@@ -1109,6 +1109,16 @@ public abstract class AbstractInstruction {
 					.getMemberReference(referencingClassId, getReference(1));
 			mic.addReference(mref);
 		}
+		
+		@Override
+		protected void renumberReference(int referencingClassId, ByteArrayOutputStream baos) {
+			int constantPoolIndex = getReference(1);
+			MemberReference mref = LinkModel.getInstance().getOptimizedReference(
+					referencingClassId, constantPoolIndex);
+			baos.write(aCode[0]);
+			baos.write(mref.getConstantPoolIndex() >> 8);
+			baos.write(mref.getConstantPoolIndex() & 0xff);
+		}
 	}
 
 	public static class I_getstatic extends FieldReferencing {

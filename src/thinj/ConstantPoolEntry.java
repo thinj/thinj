@@ -8,6 +8,8 @@ public class ConstantPoolEntry {
 	private final int aClassId;
 	private int aMemberReferenceCount;
 	private int aNumberOfMethods;
+	private int aFieldReferenceCount;
+	private int aNumberOfFields;
 
 	/**
 	 * Constructor
@@ -67,6 +69,50 @@ public class ConstantPoolEntry {
 	 */
 	public String getMethodsInClass() {
 		return "allMethods" + aClassId;
+	}
+
+	/**
+	 * Sets the number of field references
+	 * @param length
+	 */
+	public void setFieldReferencesLength(int length) {
+		aFieldReferenceCount = length;		
+	}
+
+	/**
+	 * @return The name of the C- array containing field references
+	 */
+	public String getFieldReferences() {
+		return "allFieldReferences" + aClassId;
+	}
+
+	/**
+	 * @return The number of field references
+	 */
+	public int getFieldReferencesLength() {
+		return aFieldReferenceCount;
+	}
+
+	/**
+	 * 
+	 * @param length The number of fields declared in this class
+	 */
+	public void setNumberOfFields(int length) {
+		aNumberOfFields = length;		
+	}
+
+	/**
+	 * @return the name of the C - array containing the fields info
+	 */
+	public String getFieldsInClass() {
+		return "allFields" + aClassId;
+	}
+
+	/**
+	 * @return The number of declared fields
+	 */
+	public int getNumberOfFields() {
+		return aNumberOfFields;
 	}
 
 }
