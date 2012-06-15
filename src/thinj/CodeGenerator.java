@@ -546,7 +546,7 @@ public class CodeGenerator {
 					// Dump field info:
 					// TODO generateMemberMapping(fic);
 
-					aSuite.println("   {" + classId + ", " + fic.getLinkId() + ", "
+					aSuite.println("   {" + fic.getLinkId() + ", "
 							+ fic.getAddress() + ", " + fic.getSize() + "}, // " + fic.getLinkId()
 							+ "-" + fic.getMember().format());
 					if (fic.isStatic()) {
