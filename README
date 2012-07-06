@@ -11,13 +11,28 @@ To build all the artifacts:
 thinjrt/build.sh
 thinjvm/build.sh
 thinj/build.sh
+
+Now the tools is build and placed in /tools/thinj/devel. To use the tool the environment shall
+be set up:
+. /tools/thinj/devel/env.sh /tools/thinj/devel
+
+For building the regression suite (and this depends on proper installation of thinj):
+ 
 thinjregression/build.sh
 
 When all these have succeeded, a binary 'alltests' can be found in thinjregression. 
-This binary will run the regression suite.
+This binary will run the regression suite. It shall report a single failure in the regression
+test - and this is just a test for verification of the testing mechanism.
+
+Miscellaneous
+=============
+The outcome of the building process is a tool with two executabels: thinj and retrace.
+'thinj' is used for building an executable, while 'retrace' is for stack trace dumping.
+Both scripts will show some help if started without arguments.
 
 Dependencies
 ============
 thinj Depends on:
 * j2sdk 1.6.0
 * bcel 5.2 (http://commons.apache.org/bcel)
+* gcc

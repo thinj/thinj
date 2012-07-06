@@ -716,7 +716,7 @@ public class CodeGenerator {
 	}
 
 	private static String convertSpecialChars(String s) {
-		return s.replaceAll("[#/<>()\\[;]", "_");
+		return s.replaceAll("[#/<>()\\[;$]", "_");
 	}
 
 	private void dumpExceptionHandlers(MethodInClass[] methods) {

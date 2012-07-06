@@ -3,5 +3,5 @@
 # source /opt/thinj/env.sh /opt/thinj
 #
 
-export THINJ_HOME=`cd $1; pwd`
-export PATH=$THINJ_HOME/bin:$PATH
+export __THINJ_HOME__=__DESTINATION__
+export PATH=$__THINJ_HOME__/bin:$PATH

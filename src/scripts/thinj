@@ -1,9 +1,7 @@
 #!/bin/sh
 
-# my example: thinj -c bin -o exiaload thinj.regression.exceptions.ExIALOAD
-
-if [ "$THINJ_HOME" = "" ]; then
-    echo "Env. var. THINJ_HOME is not defined."  
+if [ "$__THINJ_HOME__" = "" ]; then
+    echo "Env. var. __THINJ_HOME__ is not defined."  
     exit 1    
 fi
 
@@ -19,11 +17,10 @@ usage() {
     echo "  $0 -c bin -o generated org.example.Main"
     echo "  - This will assume that input class files shall be found in 'bin' and it will use"
     echo "    org.example.Main as the entry point for the program. The output files will all"
-    echo "    be prefixed with generated."
+    echo "    be prefixed with 'generated'."
     echo
     exit 1
 }
-
 
 while getopts "c:o:d:" optionName
 do
@@ -31,7 +28,6 @@ do
         c) classPath="$OPTARG";;
         o) outputName="$OPTARG";;
         d) DEPENDENCY_FILE="$OPTARG";;
-#        x) DEPENDENCY_FILE="$OPTARG";;
         [?]) usage $0;;
     esac
 done
@@ -45,7 +41,7 @@ shift `expr $OPTIND \- 1`
 DEP="-Ddependencies=$DEPENDENCY_FILE"
 
 # Class path is optionaly:
-MYCP="-Dmycp=$classPath:$THINJ_HOME/lib/thinjrt.jar"
+MYCP="-Dmycp=$classPath:$__THINJ_HOME__/lib/thinjrt.jar"
 
 if [ "$outputName" = "" ]; then
     usage
@@ -57,8 +53,4 @@ if [ $# -eq 0 ]; then
     usage
 fi
 
-java -cp $THINJ_HOME/lib/thinj.jar:$CLASSPATH $MYCP $DEP $OUT thinj.NewLinker $1 || exit 1 
-
-gcc -o $outputName -pg -I$THINJ_HOME/inc  -L$THINJ_HOME/lib  $outputName.c -l thinjvm
-# gcc -o $outputName -I$THINJ_HOME/inc  -L$THINJ_HOME/lib  $outputName.c -l thinjvm
- 
+java -cp $__THINJ_HOME__/lib/thinj.jar:$CLASSPATH $MYCP $DEP $OUT thinj.NewLinker $1 || exit 1 
