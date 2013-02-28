@@ -44,10 +44,11 @@ public class MemberReference extends ConstantPoolReference {
 	public String format() {
 		return aReferencedClassName +"#" + aSignature.format();
 	}
-
+	
 	@Override
 	public String toString() {
 		return "MemberReference [aReferencedClassId=" + aReferencedClassId
-				+ ", aReferencedClassName=" + aReferencedClassName + "]";
+				+ ", aReferencedClassName=" + aReferencedClassName + ", aSignature=" + aSignature
+				+ "]";
 	}
 }

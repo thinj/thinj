@@ -4,9 +4,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import thinj.IntInABox;
-import thinj.BuildinDependency;
-
 /**
  * This class represents a method in a class
  * 
@@ -27,7 +24,6 @@ public class MethodInClass extends MethodOrField {
 	private final HashSet<ClassReference> aClassDepencies;
 	private final HashSet<ClassTypeEnum> aSimpleArrayDependencies;
 	private final LinkedList<ExceptionHandler> aExceptionHandlers;
-	private final LinkedList<BuildinDependency> aBuildinDependencies;
 	private LinkedList<ConstantReference<?>> aConstantReferences;
 
 	/**
@@ -76,6 +72,7 @@ public class MethodInClass extends MethodOrField {
 	private MethodInClass(Member member, boolean isStatic, Type type, int numberOfArguments,
 			int numberOfLocalVariables, byte[] code, String[] argTypes, String returnType) {
 		super(member, isStatic);
+
 		aType = type;
 		aNumberOfArguments = numberOfArguments;
 		aNumberofLocalVariables = numberOfLocalVariables;
@@ -88,7 +85,6 @@ public class MethodInClass extends MethodOrField {
 		aClassDepencies = new HashSet<ClassReference>();
 		aSimpleArrayDependencies = new HashSet<ClassTypeEnum>();
 		aExceptionHandlers = new LinkedList<ExceptionHandler>();
-		aBuildinDependencies = new LinkedList<BuildinDependency>();
 		aConstantReferences = new LinkedList<ConstantReference<?>>();
 	}
 
@@ -330,35 +326,9 @@ public class MethodInClass extends MethodOrField {
 		return aExceptionHandlers;
 	}
 
-	/**
-	 * This method registers a build in dependency
-	 * 
-	 * @param dependency The dependency
-	 * @param linkModel Reference is created and registered in the link model
-	 * @param referencingClassId The class referencing the dependency
-	 * @param constantPoolLength Reference to constant pool length. Is incremented by one.
-	 */
-	public void addDependency(BuildinDependency dependency, LinkModel linkModel,
-			int referencingClassId, IntInABox constantPoolLength) {
-		aBuildinDependencies.add(dependency);
-		ConstantPoolReference ref = dependency.createDependency(linkModel, referencingClassId,
-				constantPoolLength);
-		if (ref instanceof MemberReference) {
-			addReference((MemberReference) ref);
-		} else if (ref instanceof ClassReference) {
-			addClassDependency((ClassReference) ref);
-		} else {
-			System.err.println("Unknown class: " + ref.getClass().getName());
-			System.exit(1);
-		}
-	}
-
 	@Override
 	public void referenced() {
 		super.referenced();
-		for (BuildinDependency dep : aBuildinDependencies) {
-			dep.referenced();
-		}
 		for (ClassReference cref : aClassDepencies) {
 			// if (cref.getClassName().contains("java/lang/Exce")) {
 			// System.err.println("juhu: " + cref);

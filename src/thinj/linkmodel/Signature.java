@@ -82,7 +82,7 @@ public class Signature implements Comparable<Signature> {
 		if (res == 0) {
 			res = this.aDescriptor.compareTo(that.aDescriptor);
 		}
-		return 0;
+		return res;
 	}
 
 	public String format() {

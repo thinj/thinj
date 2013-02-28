@@ -189,4 +189,12 @@ public class ClassInSuite {
 	public ClassTypeEnum getClassType() {
 		return aClassType;
 	}
+
+	@Override
+	public String toString() {
+		return "ClassInSuite [aClassName=" + aClassName + ", aClassId=" + aClassId
+				+ ", aSuperClassName=" + aSuperClassName + ", aInstanceSize=" + aInstanceSize
+				+ ", aReferenced=" + aReferenced + ", aInterfaces=" + aInterfaces + ", aClassType="
+				+ aClassType + "]";
+	}	
 }

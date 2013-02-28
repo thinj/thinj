@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
@@ -23,6 +24,7 @@ import thinj.linkmodel.Member;
 import thinj.linkmodel.MemberReference;
 import thinj.linkmodel.MemberReferenceTypeEnum;
 import thinj.linkmodel.MethodInClass;
+import thinj.linkmodel.MethodOrField;
 
 /**
  * This class is responsible for generation of C - code for the suite
@@ -36,6 +38,8 @@ public class CodeGenerator {
 	private PrintStream aSuite;
 	private PrintStream aTrace;
 	private HashMap<Integer, ConstantPoolEntry> aConstantPools;
+	private TreeSet<String> aVmClasses;
+	private TreeSet<Member> aVmRefSet;
 
 	public CodeGenerator(LinkModel linkModel) {
 		aLinkModel = linkModel;
@@ -48,8 +52,14 @@ public class CodeGenerator {
 	 * @param mainClassName The name of the main class
 	 * @param outputBaseName
 	 * @param startAddress The java byte code start address
+	 * @param vmClasses The mandatory classes referenced by the VM
+	 * @param vmRefList
 	 */
-	public void generateCode(String mainClassName, String outputBaseName, int startAddress) {
+	public void generateCode(String mainClassName, String outputBaseName, int startAddress,
+			HashSet<String> vmClasses, List<Member> vmRefList) {
+		// To be able to produce a sorted list:
+		aVmClasses = new TreeSet<String>(vmClasses);
+		aVmRefSet = new TreeSet<Member>(vmRefList);
 		String headerFileName = outputBaseName + ".h";
 		try {
 			aHeader = new PrintStream(headerFileName);
@@ -74,20 +84,14 @@ public class CodeGenerator {
 		sectionHeader(aSuite, "", "Declarations");
 		AbstractInstruction.generateDeclarations(aSuite);
 
-		sectionHeader(aSuite, "", "Forward Declarations");
-		AbstractInstruction.generateForwardDeclarations(aSuite);
-
-		sectionHeader(aSuite, "", "Instruction Table");
-		AbstractInstruction.generateInstructionTable(aSuite);
-
 		// Dump class info to be used during 'new' - execution:
 		dumpClassInstanceInfo();
 
 		// Dump all class references:
 		dumpClassReferences();
 
-		// Dump buildin link table:
-		dumpBuildinLinkTable();
+		// Dump ids required by VM:
+		dumpLinkIds();
 
 		// // Dump all array info:
 		// dumpArrayInfo();
@@ -135,7 +139,8 @@ public class CodeGenerator {
 		aSuite.println("const constantPool const allConstantPools[] = {");
 		for (int classId = 0; classId < aLinkModel.getTotalClassCount(); classId++) {
 			ConstantPoolEntry cp = aConstantPools.get(classId);
-			aSuite.println("    // " + classId + ": " + aLinkModel.getClassById(classId).getClassName());
+			aSuite.println("    // " + classId + ": "
+					+ aLinkModel.getClassById(classId).getClassName());
 			// Method references:
 			String s = cp.getMethodReferencesLength() == 0 ? "NULL" : cp.getMethodReferences();
 			aSuite.print("    {" + s + ", " + cp.getMethodReferencesLength());
@@ -155,37 +160,6 @@ public class CodeGenerator {
 			aSuite.println("},");
 		}
 		aSuite.println("};");
-	}
-
-	private void dumpBuildinLinkTable() {
-		sectionHeader(aSuite, "Buildin Dependencies Link Table, Class Ids");
-
-		BuildinDependency[] spa = BuildinDependency.getReferencedDependencies();
-		int count = 0;
-		aSuite.println("const BuildinClassDependency_s const AllBuildinClassDependencies[] = {");
-		for (BuildinDependency dep : spa) {
-			if (!dep.isMemberReference()) {
-				aSuite.println("    {" + dep.getCCodeReference() + ", " + dep.getMacro() + "}, ");
-				count++;
-			}
-		}
-		aSuite.println("};");
-
-		aSuite.println("const u2 numberOfAllBuildinClassDependencies = " + count + ";");
-
-		sectionHeader(aSuite, "Buildin Dependencies Link Table, Member References (Link Id)");
-		count = 0;
-		aSuite.println("const BuildinMemberDependency_s const AllBuildinMemberDependencies[] = {");
-		for (BuildinDependency dep : spa) {
-			if (dep.isMemberReference()) {
-				aSuite.println("    {" + dep.getCCodeReference() + ", " + dep.getMacro() + "}, ");
-				count++;
-			}
-		}
-		aSuite.println("};");
-
-		aSuite.println("const u2 numberOfAllBuildinMemberDependencies = " + count + ";");
-
 	}
 
 	/**
@@ -314,8 +288,10 @@ public class CodeGenerator {
 					elementClassId = elementClass.getClassId();
 				}
 
-				aHeader.println("#define " + generateClassIdMacro(cis.getClassName()) + " "
-						+ cis.getClassId());
+				if (!aVmClasses.contains(cis.getClassName())) {
+					aHeader.println("#define " + generateClassIdMacro(cis.getClassName()) + " "
+							+ cis.getClassId());
+				}
 
 				aSuite.println(String.format("    {%4d,%4d,%4d,%4d, %-16s%4d, %-16s}, // %d:%s",
 						superClassId, instanceSize, interfaceCount,
@@ -346,7 +322,7 @@ public class CodeGenerator {
 		}
 		aSuite.println("};");
 		aSuite.println("const u2 numberOfAllClassInstanceInfo = " + count + ";");
-
+/*
 		sectionHeader(aSuite, "Special java classes");
 		if (javaLangString != null) {
 			aSuite.println("const u2 javaLangStringClassIndex = " + javaLangString.getClassId()
@@ -360,7 +336,7 @@ public class CodeGenerator {
 		} else {
 			aSuite.println("const u2 javaLangClassClassIndex = 0; // Dummy value");
 		}
-
+*/
 		sectionHeader(aSuite, "Implemented interfaces");
 		// The interfaces implemented by the misc. classes:
 		aSuite.println("const u2 const implementedInterfaces[] = {");
@@ -371,11 +347,43 @@ public class CodeGenerator {
 
 	}
 
+	private void dumpLinkIds() {
+		sectionHeader(aSuite, "Class referenced by VM");
+		sectionHeader(aHeader, "Class referenced by VM");
+		// Dump mandatory class ids:
+		for (String className : aVmClasses) {
+			ClassInSuite cis = aLinkModel.getClassByName(className);
+			if (cis.isReferenced()) {
+				if (aVmClasses.contains(cis.getClassName())) {
+					aSuite.println("const u2 " + generateClassIdMacro(cis.getClassName()) + " = "
+							+ cis.getClassId() + ";");
+
+					aHeader.println("extern const u2 " + generateClassIdMacro(cis.getClassName()) + ";");
+				}
+			} else {
+				NewLinker.exit("Mandatory class is not referenced: " + className, 1);
+			}
+		}
+
+		sectionHeader(aSuite, "Link Ids referenced by VM");
+		sectionHeader(aHeader, "Link Ids referenced by VM");
+		for (Member member : aVmRefSet) {
+			int classId = aLinkModel.getClassIdByName(member.getClassName());
+			MethodOrField x = aLinkModel.getMethodOrField(classId, member.getSignature().getName(),
+					member.getSignature().getDescriptor());
+			aSuite.println("const u2 " + generateMemberLinkIdMacro(member) + " = " + x.getLinkId()
+					+ ";");
+			aHeader.println("extern const u2 " + generateMemberLinkIdMacro(member) + ";");
+		}
+
+	}
+
 	/**
 	 * This method dumps all constant references
 	 */
 	private void dumpContantReferences() {
 		dumpContantReferences("Integer", aLinkModel.getAllIntegerConstantReferences());
+		dumpContantReferences("Long", aLinkModel.getAllLongConstantReferences());
 		dumpContantReferences("Float", aLinkModel.getAllFloatConstantReferences());
 		dumpContantReferences("Double", aLinkModel.getAllDoubleConstantReferences());
 		dumpStringContantReferences();
@@ -515,9 +523,8 @@ public class CodeGenerator {
 			if (fieldRefs.length > 0) {
 				aSuite.println("const memberReference const " + cp.getFieldReferences() + "[] = {");
 				for (MemberReference ref : fieldRefs) {
-					aSuite.println("    {" + 
-							+ ref.getReferencedClassId() + ", " + ref.getLinkId() + "}, // "
-							+ ref.getConstantPoolIndex() + ": "
+					aSuite.println("    {" + +ref.getReferencedClassId() + ", " + ref.getLinkId()
+							+ "}, // " + ref.getConstantPoolIndex() + ": "
 							+ ref.getReferencedClassName() + "#" + ref.getSignature().format());
 				}
 				aSuite.println("};");
@@ -544,11 +551,11 @@ public class CodeGenerator {
 					}
 
 					// Dump field info:
-					// TODO generateMemberMapping(fic);
+					generateMemberMapping(fic);
 
-					aSuite.println("   {" + fic.getLinkId() + ", "
-							+ fic.getAddress() + ", " + fic.getSize() + "}, // " + fic.getLinkId()
-							+ "-" + fic.getMember().format());
+					aSuite.println("   {" + fic.getLinkId() + ", " + fic.getAddress() + ", "
+							+ fic.getSize() + "}, // " + fic.getLinkId() + "-"
+							+ fic.getMember().format());
 					if (fic.isStatic()) {
 						staticSize += fic.getSize();
 					}
@@ -603,11 +610,9 @@ public class CodeGenerator {
 				aSuite.println("const memberReference const " + cp.getMethodReferences() + "[] = {");
 				for (MemberReference ref : methodRefs) {
 					int argCount = aLinkModel.getArgumentCount(ref.getSignature());
-					aSuite.println("    {" 
-							+ ref.getReferencedClassId() + ", " + ref.getLinkId() + ", "
-							+ argCount + "}, // " + ref.getConstantPoolIndex() + ": "  
-							+ ref.getReferencedClassName() + "#"
-							+ ref.getSignature().format());
+					aSuite.println("    {" + ref.getReferencedClassId() + ", " + ref.getLinkId()
+							+ ", " + argCount + "}, // " + ref.getConstantPoolIndex() + ": "
+							+ ref.getReferencedClassName() + "#" + ref.getSignature().format());
 				}
 				aSuite.println("};");
 				aSuite.println();
@@ -690,9 +695,11 @@ public class CodeGenerator {
 	 * 
 	 * @param mic The method to generate references for
 	 */
-	private void generateMemberMapping(MethodInClass mic) {
-		aHeader.println("#define " + generateMemberLinkIdMacro(mic.getMember()) + " "
-				+ mic.getLinkId());
+	private void generateMemberMapping(MethodOrField mic) {
+		if (!aVmRefSet.contains(mic.getMember())) {
+			aHeader.println("#define " + generateMemberLinkIdMacro(mic.getMember()) + " "
+					+ mic.getLinkId());
+		}
 	}
 
 	/**
@@ -759,12 +766,10 @@ public class CodeGenerator {
 
 	private void dumpNativeMethodInfo() {
 		sectionHeader(aSuite, "Native Method Encapsulations");
-		int count = 0;
 		MethodInClass[] methods = aLinkModel.getAllMethods();
 		LinkedList<String> nativeTableEntries = new LinkedList<String>();
 		for (MethodInClass mic : methods) {
 			if (mic.isReferenced() && mic.getType() == MethodInClass.Type.NativeMethod) {
-				count++;
 				int nativeIndex = 1 + mic.getNativeIndex();
 				String className = mic.getMember().getClassName();
 				String methodName = mic.getMember().getSignature().getName();
@@ -821,7 +826,10 @@ public class CodeGenerator {
 					// http://java.sun.com/developer/onlineTraining/Programming/JDCBook/jniexamp.html#gen
 					// this argument shall be of type 'jclass', not 'jobject'. Fix it, when we know
 					// a little more about jclass...
-					aSuite.println("    jclass thisOrClass = NULL;");
+					//aSuite.println("    jclass thisOrClass = operandStackPopObjectRef();");
+					int classId = aLinkModel.getClassIdByName(mic.getMember().getClassName());
+					aSuite.println("    jclass thisOrClass = getJavaLangClass(" + classId + ");");
+					//aSuite.println("    jclass thisOrClass = NULL;");
 				} else {
 					aSuite.println("    jobject thisOrClass = operandStackPopObjectRef();");
 				}

@@ -11,7 +11,7 @@ public enum ClassTypeEnum {
 	ByteArray("CT_BYTE_ARRAY", 8,"1", "B"),
 	ShortArray("CT_SHORT_ARRAY", 9,"sizeof(jshort)", "!"),
 	IntArray("CT_INT_ARRAY", 10, "sizeof(jint)", "I"),
-	LongArray("CT_LONG_ARRAY", 11,"sizeof(jlong)", "!");
+	LongArray("CT_LONG_ARRAY", 11,"sizeof(jlong)", "J");
 
 	/**
 	 * Type codes as specified in JVM Spec

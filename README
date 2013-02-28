@@ -1,7 +1,7 @@
 thinj
 =====
 
-thinj is a 'linker' that converts a bunch of java class files to a self contained binary. 
+thinj is a 'linker' that converts a bunch of java class files to a C - file that can be compiled into a self contained binary. 
 
 Building
 ========

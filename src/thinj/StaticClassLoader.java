@@ -176,7 +176,7 @@ public class StaticClassLoader {
 			}
 		}
 
-		Member mainMember = new Member(mainClassName, "main", "()V");
+		Member mainMember = new Member(mainClassName, "main", "([Ljava/lang/String;)V");
 
 		// Invoke static the main() - method:
 		appendInvokeStatic(mainMember, initCode, mainClass.getClassId());

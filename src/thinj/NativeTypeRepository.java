@@ -14,6 +14,7 @@ public class NativeTypeRepository {
 	static {
 		register(new NativeBoolean());
 		register(new NativeInt());
+		register(new NativeLong());
 		register(new NativeChar());
 		register(new NativeVoid());
 		register(new NativeString());
@@ -144,6 +145,31 @@ public class NativeTypeRepository {
 		@Override
 		public String getReturnTypePushCode(String returnVarName) {
 			return "operandStackPushJavaInt(" + returnVarName + ");";
+		}
+	}
+
+	/**
+	 * Handler for 'long'
+	 */
+	private static class NativeLong extends NativeTypeHandler {
+		@Override
+		public String getParameterAssignment(String argName) {
+			return "    " + getParameterType() + " " + argName + " = operandStackPopJavaLong();";
+		}
+
+		@Override
+		public String getParameterType() {
+			return "jlong";
+		}
+
+		@Override
+		public String getKey() {
+			return "long";
+		}
+
+		@Override
+		public String getReturnTypePushCode(String returnVarName) {
+			return "operandStackPushJavaLong(" + returnVarName + ");";
 		}
 	}
 

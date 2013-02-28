@@ -9,21 +9,24 @@ VERSION=devel
 #----------------------------------------------
 # Select the target architecture of the thinjvm
 #----------------------------------------------
-export ARCH=
-#export ARCH=arm
+ARCH_NATIVE=0
+ARCH_ARM=1
+
+export ARCH=$ARCH_NATIVE
+# export ARCH=$ARCH_ARM
 
 
 #
 # Setup miscellaneous parameters for build:
 #
-if [ "$ARCH" = "" ]; then
+if [ "$ARCH" = "$ARCH_NATIVE" ]; then
     export CMD_PREFIX=
     export ENV_PREFIX=
     export GCC=gcc
     export CFLAGS="-I. -Wall -c -pg"    
     export NOSTDLIB=    
     export AR=ar
-elif [ "$ARCH" = "arm" ]; then
+elif [ "$ARCH" = "$ARCH_ARM" ]; then
     export CMD_PREFIX=arm-
     export ENV_PREFIX=ARM_
     export GCC=arm-elf-gcc

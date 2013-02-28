@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -32,6 +33,7 @@ import org.apache.bcel.classfile.LineNumber;
 import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.classfile.Utility;
+import org.apache.bcel.generic.Type;
 
 import thinj.instructions.AbstractInstruction;
 import thinj.instructions.InstructionHandler;
@@ -40,6 +42,7 @@ import thinj.linkmodel.ClassReference;
 import thinj.linkmodel.ClassTypeEnum;
 import thinj.linkmodel.ExceptionHandler;
 import thinj.linkmodel.LinkModel;
+import thinj.linkmodel.Member;
 import thinj.linkmodel.MemberReference;
 import thinj.linkmodel.MethodInClass;
 import thinj.linkmodel.MethodOrField;
@@ -66,11 +69,16 @@ public class NewLinker {
 	 * @param requiredReferences An array of required methods and field.
 	 * @param mainClassName The class containing the main - method. Note that the main-method shall
 	 *            have no args.
+	 * @param vmClassReferences Classes referenced by the VM. This will lead to generation of link
+	 *            constants (link ids)
+	 * @param vmMemberReferences Class member referenced by the VM. This will lead to generation of
+	 *            link constants (link ids)
 	 * @throws IOException If any common I/O errors occur
 	 * @throws ClassNotFoundException If unable to load a referenced class
 	 */
 	public NewLinker(String classPath, String outputBaseName, String[] requiredReferences,
-			String mainClassName) throws IOException, ClassNotFoundException {
+			String[] vmClassReferences, String[] vmMemberReferences, String mainClassName)
+			throws IOException, ClassNotFoundException {
 		aOutputBaseName = outputBaseName;
 		aLinkModel = LinkModel.getInstance();
 		aClassReader = new ClassReader(classPath);
@@ -79,21 +87,20 @@ public class NewLinker {
 		// Create synthetic classes as the first:
 		createSyntheticClasses();
 
+		// Build a list of the classes referenced from the VM:
+		HashSet<String> vmClasses = new HashSet<String>();
+		// Load mandatory classes referenced by VM:
+		for (String className : vmClassReferences) {
+			ClassInSuite cl = loadClass(ClassInSuite.getGlobalName(className));
+			vmClasses.add(cl.getClassName());
+		}
+
 		// 'Main' is our starting point:
-		handleReference(mainClassName, "main", "()V");
+		handleReference(mainClassName, "main", "([Ljava/lang/String;)V");
 
 		// Reference the required references:
-		for (String ref : requiredReferences) {
-			StringTokenizer st = new StringTokenizer(ref, " ");
-			if (st.countTokens() != 3) {
-				System.err.println("Wrong format of dependency: " + ref);
-				System.exit(1);
-			}
-			String clName = ClassInSuite.getGlobalName(st.nextToken());
-			String memberName = st.nextToken();
-			String signature = st.nextToken();
-			handleReference(clName, memberName, signature);
-		}
+		includeReferences(requiredReferences);
+		List<Member> vmRefList = includeReferences(vmMemberReferences);
 
 		handleDecendants();
 
@@ -104,7 +111,45 @@ public class NewLinker {
 		aLinkModel.optimize();
 
 		CodeGenerator cg = new CodeGenerator(aLinkModel);
-		cg.generateCode(mainClassName, aOutputBaseName, aInitMethod.getCodeOffset());
+		cg.generateCode(mainClassName, aOutputBaseName, aInitMethod.getCodeOffset(), vmClasses,
+				vmRefList);
+	}
+
+	/**
+	 * This method iterates through the references and ensures that the target of each reference is
+	 * included
+	 * 
+	 * @param references All the references to include
+	 * @return A list of {@link Member}s
+	 */
+	private List<Member> includeReferences(String[] references) {
+		LinkedList<Member> members = new LinkedList<Member>();
+		for (String ref : references) {
+			Member m = toMember(ref);
+			members.add(m);
+			handleReference(m.getClassName(), m.getSignature().getName(), m.getSignature()
+					.getDescriptor());
+		}
+
+		return members;
+	}
+
+	/**
+	 * This method converts the supplied member reference 'ref' to a {@link Member} instance by
+	 * splitting 'ref' on white spaces
+	 * 
+	 * @param ref The member reference
+	 * @return The corresponding Member instance
+	 */
+	public static Member toMember(String ref) {
+		StringTokenizer st = new StringTokenizer(ref, " ");
+		if (st.countTokens() != 3) {
+			NewLinker.exit("Wrong format of dependency: " + ref, 1);
+		}
+		String clName = ClassInSuite.getGlobalName(st.nextToken());
+		String memberName = st.nextToken();
+		String signature = st.nextToken();
+		return new Member(clName, memberName, signature);
 	}
 
 	/**
@@ -449,7 +494,11 @@ public class NewLinker {
 			}
 			// Determine number of arguments to method - 'this' counts also as an
 			// argument:
-			int numberOfArguments = m.getArgumentTypes().length + (m.isStatic() ? 0 : 1);
+			int numberOfArguments = (m.isStatic() ? 0 : 1);
+			for (Type mx : m.getArgumentTypes()) {
+				// Count long / double as 2 arguments:
+				numberOfArguments += mx.getSize();
+			}
 
 			// Find number of local variables in method:
 			if (!m.isAbstract() && !m.isNative()) {
@@ -579,7 +628,16 @@ public class NewLinker {
 		// loadClass(ClassInSuite.getGlobalName(Class.class.getName()));
 		handleReference(ClassInSuite.getGlobalName(Class.class.getName()), "aClassId", "I");
 
+		// If the simple type arrays are not referenced from java - classes, they are not included.
+		// However, if native methods use these types, they cannot be found at runtime => it is
+		// necessary to reference all simple array types. An example might be native code as this:
+		// jarray ba = NewByteArray(sizeof(contextDef));
+		// (Example from Java_java_lang_Thread.c)
+
 		loadArray("[C");
+		loadArray("[B");
+		loadArray("[I");
+		loadArray("[J");
 		// As long as our own java.lang.Class does not allocate it's own Class[] we will have to
 		// help referencing Object[]:
 		// TODO Rework java.lang.Class
@@ -721,8 +779,6 @@ public class NewLinker {
 	}
 
 	public static void main(String[] args) {
-		// new Exception("tadah").printStackTrace();
-		// System.exit(1);
 		// Example:
 		// java -cp ~/workspace/thinj/bin:$CLASSPATH -Dmycp=bin:/tools/bcel/5.2/bcel-5.2.jar \\
 		// thinj.ClassReader thinj/regression/AllTests thinj/regression/gc/GC \\
@@ -770,24 +826,22 @@ public class NewLinker {
 		// <class name>#<member name>#<signature>
 		// - example:
 		// thinj.regression.nativetest.ReverseNativeInstanceTest#bar#()V
-		String[] requiredReferences = null;
+		LinkedList<String> requiredReferences = new LinkedList<String>();
 		String dependsFile = System.getProperty("dependencies");
 		if (dependsFile != null && dependsFile.length() > 0) {
 			try {
 				BufferedReader bis = new BufferedReader(new FileReader(dependsFile));
 				String line;
-				LinkedList<String> l = new LinkedList<String>();
 				do {
 					line = bis.readLine();
 					if (line != null) {
 						// Strip comments:
 						line = line.replaceAll("#.*$", "").replaceAll("^[ \t]*", "");
 						if (line.length() > 0) {
-							l.add(line);
+							requiredReferences.add(line);
 						}
 					}
 				} while (line != null);
-				requiredReferences = l.toArray(new String[l.size()]);
 			} catch (FileNotFoundException e) {
 				System.err.println("failed to open dependency file: " + dependsFile);
 				System.exit(1);
@@ -796,12 +850,53 @@ public class NewLinker {
 				e.printStackTrace();
 				System.exit(1);
 			}
-		} else {
-			requiredReferences = new String[0];
 		}
+		// else: Ignore
 
+		// requiredReferences.add("java/lang.Thread runFromNative ()V");
+		// requiredReferences.add("java.lang.Thread getNextReadyThread ()Ljava/lang/Thread;");
 		try {
-			new NewLinker(classPath, outFile, requiredReferences, mainClass);
+			new NewLinker(classPath, outFile, requiredReferences.toArray(new String[0]),
+// @formatter:off
+					new String[] { 
+						ArrayIndexOutOfBoundsException.class.getName(),
+						ArithmeticException.class.getName(),
+						Class.class.getName(), 
+						ClassCastException.class.getName(),
+						NegativeArraySizeException.class.getName(),
+						NullPointerException.class.getName(), 
+						OutOfMemoryError.class.getName(),
+//						IllegalArgumentException.class.getName(),
+//						IllegalThreadStateException.class.getName(),
+						String.class.getName(), 
+						Thread.class.getName(), 
+				    },
+					new String[] { 
+				        "java.lang.ArithmeticException            <init>         (Ljava/lang/String;)V",
+				        "java.lang.ArrayIndexOutOfBoundsException <init>         (I)V",
+				        "java.lang.Class                          aClassId       I",
+				        "java.lang.Class                          aAllClasses    [Ljava/lang/Class;",
+				        "java.lang.ClassCastException             <init>         ()V",				        
+//				        "java.lang.IllegalArgumentException       <init>         (Ljava/lang/String;)V",
+//				        "java.lang.IllegalThreadStateException    <init>         (Ljava/lang/String;)V",
+				        "java.lang.NullPointerException           <init>         ()V",
+				        "java.lang.OutOfMemoryError               <init>         ()V",
+				        "java.lang.OutOfMemoryError               getInstance    ()Ljava/lang/OutOfMemoryError;",
+				        "java.lang.NegativeArraySizeException     <init>         ()V",
+				        "java.lang.String                         value          [C",
+
+				        "java.lang.Thread                         aAllThreads    Ljava/lang/Thread;",
+						"java.lang.Thread                         aContext       [B",
+				        "java.lang.Thread                         aCurrentThread Ljava/lang/Thread;",
+				        "java.lang.Thread                         aNextThread    Ljava/lang/Thread;",
+						"java.lang.Thread                         aStack         [B",
+				        "java.lang.Thread                         aState         I",
+				        "java.lang.Thread                         runFromNative  ()V",
+//				        "java.lang.Throwable                      aCause         Ljava/lang/String;",
+//				        "java.lang.Throwable                      aStackTrace    [I",				        
+			        }, 
+					// @formatter:on
+					mainClass);
 		} catch (Exception e) {
 			System.err.println("Failed linking for " + args[0]);
 			e.printStackTrace();

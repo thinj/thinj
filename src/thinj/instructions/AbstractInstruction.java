@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import thinj.IntInABox;
-import thinj.BuildinDependency;
 import thinj.linkmodel.ClassReference;
 import thinj.linkmodel.ClassTypeEnum;
 import thinj.linkmodel.ConstantReference;
@@ -22,7 +21,7 @@ import thinj.linkmodel.Signature;
 
 public abstract class AbstractInstruction {
 	public static final String BYTECODE_PREFIX = "c_";
-	private static final String C_FUNCTION_PREFIX = "f_";
+	//private static final String C_FUNCTION_PREFIX = "f_";
 
 	// registered instructions:
 	protected static HashMap<Integer, Class<? extends AbstractInstruction>> aInstructions = new HashMap<Integer, Class<? extends AbstractInstruction>>();
@@ -53,79 +52,110 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0x06, I_iconst_3.class);
 		aInstructions.put(0x07, I_iconst_4.class);
 		aInstructions.put(0x08, I_iconst_5.class);
+		aInstructions.put(0x09, I_lconst_0.class);
+		aInstructions.put(0x0a, I_lconst_1.class);
 
+		
 		aInstructions.put(0x10, I_bipush.class);
 		aInstructions.put(0x11, I_sipush.class);
 		aInstructions.put(0x12, I_ldc.class);
 		aInstructions.put(0x13, I_ldc_w.class);
-
+		aInstructions.put(0x14, I_ldc2_w.class);	
 		aInstructions.put(0x15, I_iload.class);
+		aInstructions.put(0x16, I_lload.class);
 
 		aInstructions.put(0x19, I_aload.class);
 		aInstructions.put(0x1a, I_iload_0.class);
 		aInstructions.put(0x1b, I_iload_1.class);
 		aInstructions.put(0x1c, I_iload_2.class);
-		aInstructions.put(0x1d, I_iload_3.class);
+		aInstructions.put(0x1d, I_iload_3.class);		
+		aInstructions.put(0x1e, I_lload_0.class);
+		aInstructions.put(0x1f, I_lload_1.class);
+		aInstructions.put(0x20, I_lload_2.class);
+		aInstructions.put(0x21, I_lload_3.class);
 
 		aInstructions.put(0x2a, I_aload_0.class);
 		aInstructions.put(0x2b, I_aload_1.class);
 		aInstructions.put(0x2c, I_aload_2.class);
 		aInstructions.put(0x2d, I_aload_3.class);
 		aInstructions.put(0x2e, I_iaload.class);
+		aInstructions.put(0x2f, I_laload.class);
 
 		aInstructions.put(0x32, I_aaload.class);
 		aInstructions.put(0x33, I_baload.class);
 		aInstructions.put(0x34, I_caload.class);
 
 		aInstructions.put(0x36, I_istore.class);
+		aInstructions.put(0x37, I_lstore.class);
 
 		aInstructions.put(0x3a, I_astore.class);
 		aInstructions.put(0x3b, I_istore_0.class);
 		aInstructions.put(0x3c, I_istore_1.class);
 		aInstructions.put(0x3d, I_istore_2.class);
 		aInstructions.put(0x3e, I_istore_3.class);
-
+		aInstructions.put(0x3f, I_lstore_0.class);
+		aInstructions.put(0x40, I_lstore_1.class);
+		aInstructions.put(0x41, I_lstore_2.class);
+		aInstructions.put(0x42, I_lstore_3.class);
+		
 		aInstructions.put(0x4b, I_astore_0.class);
 		aInstructions.put(0x4c, I_astore_1.class);
 		aInstructions.put(0x4d, I_astore_2.class);
 		aInstructions.put(0x4e, I_astore_3.class);
 		aInstructions.put(0x4f, I_iastore.class);
+		aInstructions.put(0x50, I_lastore.class);
 
 		aInstructions.put(0x53, I_aastore.class);
 		aInstructions.put(0x54, I_bastore.class);
 		aInstructions.put(0x55, I_castore.class);
 		aInstructions.put(0x57, I_pop.class);
-
+		aInstructions.put(0x58, I_pop2.class);
 		aInstructions.put(0x59, I_dup.class);
+		aInstructions.put(0x5a, I_dup_x1.class);
 
 		aInstructions.put(0x5c, I_dup2.class);
+		aInstructions.put(0x5d, I_dup2_x1.class);
 
 		aInstructions.put(0x60, I_iadd.class);
+		aInstructions.put(0x61, I_ladd.class);
 
 		aInstructions.put(0x64, I_isub.class);
+		aInstructions.put(0x65, I_lsub.class);
 
 		aInstructions.put(0x68, I_imul.class);
+		aInstructions.put(0x69, I_lmul.class);
 
 		aInstructions.put(0x6c, I_idiv.class);
+		aInstructions.put(0x6d, I_ldiv.class);
 
 		aInstructions.put(0x70, I_irem.class);
+		aInstructions.put(0x71, I_lrem.class);
 
 		aInstructions.put(0x74, I_ineg.class);
+		aInstructions.put(0x75, I_lneg.class);
 
 		aInstructions.put(0x78, I_ishl.class);
-
+		aInstructions.put(0x79, I_lshl.class);
 		aInstructions.put(0x7a, I_ishr.class);
-
+		aInstructions.put(0x7b, I_lshr.class);
+		
+		aInstructions.put(0x7d, I_lushr.class);
 		aInstructions.put(0x7e, I_iand.class);
-
+		aInstructions.put(0x7f, I_land.class);
 		aInstructions.put(0x80, I_ior.class);
-
+		aInstructions.put(0x81, I_lor.class);
 		aInstructions.put(0x82, I_ixor.class);
-
+		aInstructions.put(0x83, I_lxor.class);
 		aInstructions.put(0x84, I_iinc.class);
+		aInstructions.put(0x85, I_i2l.class);
 
+		aInstructions.put(0x88, I_l2i.class);
+		
 		aInstructions.put(0x91, I_i2b.class);
+		aInstructions.put(0x92, I_i2c.class);
 
+		aInstructions.put(0x94, I_lcmp.class);		
+		
 		aInstructions.put(0x99, I_ifeq.class);
 		aInstructions.put(0x9a, I_ifne.class);
 
@@ -144,6 +174,7 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0xa7, I_goto.class);
 
 		aInstructions.put(0xac, I_ireturn.class);
+		aInstructions.put(0xad, I_lreturn.class);
 
 		aInstructions.put(0xb0, I_areturn.class);
 		aInstructions.put(0xb1, I_vreturn.class);
@@ -191,31 +222,8 @@ public abstract class AbstractInstruction {
 	 */
 	public void registerDependencies(LinkModel linkModel, int referencingClassId,
 			MethodInClass mic, IntInABox constantPoolLength) {
-		BuildinDependency[] excDeps = canThrow();
-		if (excDeps != null) {
-			for (BuildinDependency dep : excDeps) {
-				if (dep == BuildinDependency.OUT_OF_MEMORY_ERROR_CONSTRUCTOR) {
-					mic.addDependency(BuildinDependency.OUT_OF_MEMORY_ERROR_CONSTRUCTOR, linkModel,
-							referencingClassId, constantPoolLength);
-					mic.addDependency(BuildinDependency.OUT_OF_MEMORY_ERROR_GET_INSTANCE,
-							linkModel, referencingClassId, constantPoolLength);
-				} else {
-					mic.addDependency(dep, linkModel, referencingClassId, constantPoolLength);
-				}
-			}
-		}
 	}
 
-	/**
-	 * This method shall be overloaded when an instruction might throw an exception
-	 * 
-	 * @return Per default null is returned which will be interpreted as no exceptions. When
-	 *         non-null is returned this is interpreted as an array of exceptions that the
-	 *         instruction might throw during run time.
-	 */
-	protected BuildinDependency[] canThrow() {
-		return null;
-	}
 
 	/**
 	 * This method handles a reference to a member. 'handles' means that when this method returns
@@ -295,6 +303,7 @@ public abstract class AbstractInstruction {
 	 */
 	protected int getReference(int offset) {
 		int res = ((int) aCode[offset]) & 0xff;
+		res *= 256;
 		res += ((int) aCode[offset + 1]) & 0xff;
 		return res;
 	}
@@ -333,43 +342,55 @@ public abstract class AbstractInstruction {
 	 * @param out the stream to print to
 	 */
 	public static void generateDeclarations(PrintStream out) {
-		int implCount = 0;
-		for (Integer newOpcode : aReverseInstructionMapping.keySet()) {
-			int oldOpcode = aReverseInstructionMapping.get(newOpcode);
+		for (int opcode = 0; opcode < 256; opcode++) {
 
-			AbstractInstruction ins = lookup(oldOpcode);
-			implCount++;
-
-			out.print("#define " + BYTECODE_PREFIX + ins.getShortForm() + "(");
-			for (int i = 1; i < ins.aSize; i++) {
-				if (i > 1) {
-					out.print(", ");
+			AbstractInstruction ins = lookup(opcode);
+			if (ins != null) {
+				out.print(String.format("/* 0x%02x */  ", opcode));
+				out.print("#define " + BYTECODE_PREFIX + ins.getShortForm() + "(");
+				for (int i = 1; i < ins.aSize; i++) {
+					if (i > 1) {
+						out.print(", ");
+					}
+					out.print("p" + i);
 				}
-				out.print("p" + i);
+				out.print(") ");
+				out.print(String.format("0x%02x", opcode));
+				for (int i = 1; i < ins.aSize; i++) {
+					out.print(", ");
+					out.print("p" + i);
+				}
+				out.println(",");
 			}
-			out.print(") ");
-			out.print(String.format("0x%02x", newOpcode));
-			for (int i = 1; i < ins.aSize; i++) {
-				out.print(", ");
-				out.print("p" + i);
-			}
-			out.println(",");
 		}
-		// } else {
-		// out.println("// " + String.format(" 0x%02x: Not implemented", opcode));
-		out.println();
-		out.println("// The number of instructions necessary for running this suite:");
-		out.println("const size_t numberOfDefinedInstructions = " + implCount + ";");
 		out.println();
 		out.println("// The total number of instructions implemented by thinJ so far: "
 				+ aInstructions.size());
 	}
 
+	/*
+	 * public static void generateDeclarations(PrintStream out) { int implCount = 0; for (Integer
+	 * newOpcode : aReverseInstructionMapping.keySet()) { int oldOpcode =
+	 * aReverseInstructionMapping.get(newOpcode);
+	 * 
+	 * AbstractInstruction ins = lookup(oldOpcode); implCount++;
+	 * 
+	 * out.print("#define " + BYTECODE_PREFIX + ins.getShortForm() + "("); for (int i = 1; i <
+	 * ins.aSize; i++) { if (i > 1) { out.print(", "); } out.print("p" + i); } out.print(") ");
+	 * out.print(String.format("0x%02x", newOpcode)); for (int i = 1; i < ins.aSize; i++) {
+	 * out.print(", "); out.print("p" + i); } out.println(","); } // } else { // out.println("// " +
+	 * String.format(" 0x%02x: Not implemented", opcode)); out.println();
+	 * out.println("// The number of instructions necessary for running this suite:");
+	 * out.println("const size_t numberOfDefinedInstructions = " + implCount + ";"); out.println();
+	 * out.println("// The total number of instructions implemented by thinJ so far: " +
+	 * aInstructions.size()); }
+	 */
 	/**
 	 * This method will print instruction table declarations to the printstream 'out'
 	 * 
 	 * @param out the stream to print to
 	 */
+	/*
 	public static void generateInstructionTable(PrintStream out) {
 		out.println("const insWithOpcode const allInstructions[] = {");
 		for (Integer newOpcode : aReverseInstructionMapping.keySet()) {
@@ -401,12 +422,13 @@ public abstract class AbstractInstruction {
 		out.println("};");
 
 	}
-
+*/
 	/**
 	 * This method will print c-function forward declarations to the printstream 'out'
 	 * 
 	 * @param out the stream to print to
 	 */
+	/*
 	public static void generateForwardDeclarations(PrintStream out) {
 		for (Integer newOpcode : aReverseInstructionMapping.keySet()) {
 			int oldOpcode = aReverseInstructionMapping.get(newOpcode);
@@ -417,7 +439,7 @@ public abstract class AbstractInstruction {
 		}
 
 	}
-
+*/
 	/**
 	 * This method returns the short form of the instruction
 	 * 
@@ -467,6 +489,7 @@ public abstract class AbstractInstruction {
 		while (bais.available() > 0) {
 			try {
 				AbstractInstruction ins = AbstractInstruction.readFrom(bais);
+				// System.out.println("ins: " + ins.getClass());
 				ins.renumberReference(classId, baos);
 			} catch (IOException e) {
 				System.err.println("Uncaught exception");
@@ -568,6 +591,18 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_lconst_0 extends AbstractInstruction {
+		public I_lconst_0() {
+			super(1);
+		}
+	}
+
+	public static class I_lconst_1 extends AbstractInstruction {
+		public I_lconst_1() {
+			super(1);
+		}
+	}
+
 	public static class I_bipush extends AbstractInstruction {
 		public I_bipush() {
 			super(2);
@@ -590,6 +625,10 @@ public abstract class AbstractInstruction {
 			super(size);
 		}
 
+		/**
+		 * This method extracts the constant pool index identifying the referenced constant 
+		 * @return The constant pool index identifying the referenced constant
+		 */
 		protected abstract int getLDCReference();
 
 		@Override
@@ -679,8 +718,25 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_ldc2_w extends Abstract_ldc {
+		public I_ldc2_w() {
+			super(3);
+		}
+
+		@Override
+		protected int getLDCReference() {
+			return getReference(1);
+		}
+	}
+
 	public static class I_iload extends AbstractInstruction {
 		public I_iload() {
+			super(2);
+		}
+	}
+
+	public static class I_lload extends AbstractInstruction {
+		public I_lload() {
 			super(2);
 		}
 	}
@@ -715,6 +771,30 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_lload_0 extends AbstractInstruction {
+		public I_lload_0() {
+			super(1);
+		}
+	}
+
+	public static class I_lload_1 extends AbstractInstruction {
+		public I_lload_1() {
+			super(1);
+		}
+	}
+
+	public static class I_lload_2 extends AbstractInstruction {
+		public I_lload_2() {
+			super(1);
+		}
+	}
+
+	public static class I_lload_3 extends AbstractInstruction {
+		public I_lload_3() {
+			super(1);
+		}
+	}
+
 	public static class I_aload_0 extends AbstractInstruction {
 		public I_aload_0() {
 			super(1);
@@ -743,24 +823,17 @@ public abstract class AbstractInstruction {
 		public I_iaload() {
 			super(1);
 		}
+	}
 
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR,
-					BuildinDependency.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION_CONSTRUCTOR };
+	public static class I_laload extends AbstractInstruction {
+		public I_laload() {
+			super(1);
 		}
-
 	}
 
 	public static class I_aaload extends AbstractInstruction {
 		public I_aaload() {
 			super(1);
-		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR,
-					BuildinDependency.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION_CONSTRUCTOR };
 		}
 	}
 
@@ -768,28 +841,22 @@ public abstract class AbstractInstruction {
 		public I_baload() {
 			super(1);
 		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR,
-					BuildinDependency.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_caload extends AbstractInstruction {
 		public I_caload() {
 			super(1);
 		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR,
-					BuildinDependency.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_istore extends AbstractInstruction {
 		public I_istore() {
+			super(2);
+		}
+	}
+
+	public static class I_lstore extends AbstractInstruction {
+		public I_lstore() {
 			super(2);
 		}
 	}
@@ -824,6 +891,30 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_lstore_0 extends AbstractInstruction {
+		public I_lstore_0() {
+			super(1);
+		}
+	}
+
+	public static class I_lstore_1 extends AbstractInstruction {
+		public I_lstore_1() {
+			super(1);
+		}
+	}
+
+	public static class I_lstore_2 extends AbstractInstruction {
+		public I_lstore_2() {
+			super(1);
+		}
+	}
+
+	public static class I_lstore_3 extends AbstractInstruction {
+		public I_lstore_3() {
+			super(1);
+		}
+	}
+
 	public static class I_astore_0 extends AbstractInstruction {
 		public I_astore_0() {
 			super(1);
@@ -852,11 +943,11 @@ public abstract class AbstractInstruction {
 		public I_iastore() {
 			super(1);
 		}
+	}
 
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR,
-					BuildinDependency.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION_CONSTRUCTOR };
+	public static class I_lastore extends AbstractInstruction {
+		public I_lastore() {
+			super(1);
 		}
 	}
 
@@ -864,23 +955,11 @@ public abstract class AbstractInstruction {
 		public I_aastore() {
 			super(1);
 		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR,
-					BuildinDependency.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_bastore extends AbstractInstruction {
 		public I_bastore() {
 			super(1);
-		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR,
-					BuildinDependency.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION_CONSTRUCTOR };
 		}
 	}
 
@@ -888,16 +967,22 @@ public abstract class AbstractInstruction {
 		public I_castore() {
 			super(1);
 		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR,
-					BuildinDependency.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_pop extends AbstractInstruction {
 		public I_pop() {
+			super(1);
+		}
+	}
+
+	public static class I_pop2 extends AbstractInstruction {
+		public I_pop2() {
+			super(1);
+		}
+	}
+
+	public static class I_dup_x1 extends AbstractInstruction {
+		public I_dup_x1() {
 			super(1);
 		}
 	}
@@ -914,8 +999,20 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_dup2_x1 extends AbstractInstruction {
+		public I_dup2_x1() {
+			super(1);
+		}
+	}
+
 	public static class I_iadd extends AbstractInstruction {
 		public I_iadd() {
+			super(1);
+		}
+	}
+
+	public static class I_ladd extends AbstractInstruction {
+		public I_ladd() {
 			super(1);
 		}
 	}
@@ -926,8 +1023,20 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_lsub extends AbstractInstruction {
+		public I_lsub() {
+			super(1);
+		}
+	}
+
 	public static class I_imul extends AbstractInstruction {
 		public I_imul() {
+			super(1);
+		}
+	}
+
+	public static class I_lmul extends AbstractInstruction {
+		public I_lmul() {
 			super(1);
 		}
 	}
@@ -936,10 +1045,11 @@ public abstract class AbstractInstruction {
 		public I_idiv() {
 			super(1);
 		}
+	}
 
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.ARITHMETIC_EXCEPTION_CONSTRUCTOR };
+	public static class I_ldiv extends AbstractInstruction {
+		public I_ldiv() {
+			super(1);
 		}
 	}
 
@@ -947,10 +1057,17 @@ public abstract class AbstractInstruction {
 		public I_irem() {
 			super(1);
 		}
+	}
 
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.ARITHMETIC_EXCEPTION_CONSTRUCTOR };
+	public static class I_lrem extends AbstractInstruction {
+		public I_lrem() {
+			super(1);
+		}
+	}
+
+	public static class I_lushr extends AbstractInstruction {
+		public I_lushr() {
+			super(1);
 		}
 	}
 
@@ -966,8 +1083,26 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_land extends AbstractInstruction {
+		public I_land() {
+			super(1);
+		}
+	}
+
+	public static class I_lor extends AbstractInstruction {
+		public I_lor() {
+			super(1);
+		}
+	}
+
 	public static class I_ixor extends AbstractInstruction {
 		public I_ixor() {
+			super(1);
+		}
+	}
+
+	public static class I_lxor extends AbstractInstruction {
+		public I_lxor() {
 			super(1);
 		}
 	}
@@ -980,6 +1115,24 @@ public abstract class AbstractInstruction {
 
 	public static class I_i2b extends AbstractInstruction {
 		public I_i2b() {
+			super(1);
+		}
+	}
+
+	public static class I_i2c extends AbstractInstruction {
+		public I_i2c() {
+			super(1);
+		}
+	}
+
+	public static class I_l2i extends AbstractInstruction {
+		public I_l2i() {
+			super(1);
+		}
+	}
+
+	public static class I_i2l extends AbstractInstruction {
+		public I_i2l() {
 			super(1);
 		}
 	}
@@ -1081,6 +1234,13 @@ public abstract class AbstractInstruction {
 		// TODO throws IllegalMonitorStateException
 	}
 
+	public static class I_lreturn extends AbstractInstruction {
+		public I_lreturn() {
+			super(1);
+		}
+		// TODO throws IllegalMonitorStateException
+	}
+
 	public static class I_areturn extends AbstractInstruction {
 		public I_areturn() {
 			super(1);
@@ -1109,7 +1269,7 @@ public abstract class AbstractInstruction {
 					.getMemberReference(referencingClassId, getReference(1));
 			mic.addReference(mref);
 		}
-		
+
 		@Override
 		protected void renumberReference(int referencingClassId, ByteArrayOutputStream baos) {
 			int constantPoolIndex = getReference(1);
@@ -1128,17 +1288,9 @@ public abstract class AbstractInstruction {
 	}
 
 	public static class I_getfield extends FieldReferencing {
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_putfield extends FieldReferencing {
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static abstract class MethodReferencing extends AbstractInstruction {
@@ -1180,11 +1332,6 @@ public abstract class AbstractInstruction {
 		public I_invokespecial() {
 			super(3);
 		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_invokestatic extends MethodReferencing {
@@ -1196,11 +1343,6 @@ public abstract class AbstractInstruction {
 	public static class I_invokeinterface extends MethodReferencing {
 		public I_invokeinterface() {
 			super(5);
-		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR };
 		}
 	}
 
@@ -1223,11 +1365,6 @@ public abstract class AbstractInstruction {
 			ClassReference classReference = linkModel.getClassReference(referencingClassId,
 					getReference(1));
 			mic.addClassDependency(classReference);
-		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.OUT_OF_MEMORY_ERROR_CONSTRUCTOR };
 		}
 	}
 
@@ -1259,11 +1396,6 @@ public abstract class AbstractInstruction {
 			ClassTypeEnum type = getType();
 			mic.addSimpleArrayDependency(type);
 		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NEGATIVE_ARRAY_SIZE_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_anewarray extends AbstractInstruction {
@@ -1284,21 +1416,11 @@ public abstract class AbstractInstruction {
 					constantPoolLength.increment(), "[L" + classReference.getClassName());
 			mic.addClassDependency(classReference);
 		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NEGATIVE_ARRAY_SIZE_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_arraylength extends AbstractInstruction {
 		public I_arraylength() {
 			super(1);
-		}
-
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR };
 		}
 	}
 
@@ -1317,10 +1439,6 @@ public abstract class AbstractInstruction {
 	}
 
 	public static class I_checkcast extends AbstractCheckcast {
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.CLASS_CAST_EXCEPTION_CONSTRUCTOR };
-		}
 	}
 
 	public static class I_instanceof extends AbstractCheckcast {
@@ -1344,6 +1462,12 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_lneg extends AbstractInstruction {
+		public I_lneg() {
+			super(1);
+		}
+	}
+
 	public static class I_ishl extends AbstractInstruction {
 		public I_ishl() {
 			super(1);
@@ -1356,14 +1480,28 @@ public abstract class AbstractInstruction {
 		}
 	}
 
+	public static class I_lshl extends AbstractInstruction {
+		public I_lshl() {
+			super(1);
+		}
+	}
+
+	public static class I_lshr extends AbstractInstruction {
+		public I_lshr() {
+			super(1);
+		}
+	}
+
 	public static class I_athrow extends AbstractInstruction {
 		public I_athrow() {
 			super(1);
 		}
+	}
 
-		@Override
-		protected BuildinDependency[] canThrow() {
-			return new BuildinDependency[] { BuildinDependency.NULL_POINTER_EXCEPTION_CONSTRUCTOR };
+	
+	public static class I_lcmp extends AbstractInstruction {
+		public I_lcmp() {
+			super(1);
 		}
 	}
 

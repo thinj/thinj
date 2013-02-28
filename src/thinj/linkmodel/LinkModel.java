@@ -570,7 +570,7 @@ public class LinkModel {
 		}
 		return ts.toArray(new MethodInClass[ts.size()]);
 	}
-	
+
 	/**
 	 * This method returns all fields implemented by the class identified by 'classId'
 	 * 
@@ -595,7 +595,6 @@ public class LinkModel {
 		}
 		return ts.toArray(new FieldInClass[ts.size()]);
 	}
-
 
 	/**
 	 * This method returns the referenced member from a class. If not found in the indicated class,
@@ -1044,9 +1043,34 @@ public class LinkModel {
 	 * This method cleans up the model and optimises the different references etc.
 	 */
 	public void optimize() {
+//		for (Entry<String, ClassInSuite> entry : aClasses.entrySet()) {
+//			System.out.println(entry.getValue());
+//		}
+//		System.out.println("befor rfcl cpix tgcl");
+//		for (MemberReference mref : aMemberReferences) {
+//			System.out.println(String.format("befor %4d %4d %4d %s#%s", 
+//					mref.getClassId(),
+//					mref.getConstantPoolIndex(),
+//					mref.getReferencedClassId(),
+//					mref.getReferencedClassName(), 
+//					mref.getSignature()
+//					));
+//		}
+
 		removeUnreferencedItems();
 		renumberAllClassIds();
 		optimizeMemberReferences();
+
+//		System.out.println("after rfcl cpix tgcl");
+//		for (MemberReference mref : aMemberReferences) {
+//			System.out.println(String.format("after %4d %4d %4d %s#%s", 
+//					mref.getClassId(),
+//					mref.getConstantPoolIndex(),
+//					mref.getReferencedClassId(),
+//					mref.getReferencedClassName(), 
+//					mref.getSignature()
+//					));
+//		}
 	}
 
 	/**
@@ -1225,6 +1249,10 @@ public class LinkModel {
 			mref.renumberClassId(classIdMap.get(mref.getClassId()));
 			mref.setReferencedClassId(classIdMap.get(mref.getReferencedClassId()));
 		}
+		
+//		for (Entry<Integer, Integer> entry : classIdMap.entrySet()) {
+//			System.out.println("class id map: " + entry.getKey() + "->" + entry.getValue());			
+//		}
 	}
 
 	/**
@@ -1234,7 +1262,7 @@ public class LinkModel {
 		// -------------------------------------------------
 		// aMembers
 		// -------------------------------------------------
-		for (Iterator<MethodOrField> it = aMembers.iterator(); it.hasNext();) {
+		for (Iterator<MethodOrField> it = aMembers.iterator(); it.hasNext();) {			
 			MethodOrField next = it.next();
 			if (!next.isReferenced()) {
 				it.remove();
@@ -1314,6 +1342,11 @@ public class LinkModel {
 	public MemberReference getOptimizedReference(int referencingClassId, int constantPoolIndex) {
 		MemberReference retval = null;
 		for (MemberReference mr : aMemberReferenceTranslationMap.keySet()) {
+//			if (referencingClassId == 9 && constantPoolIndex == 6) {
+//				if (mr.getClassId() == 9) {
+//					System.out.println("mr = " + mr.format());
+//				}
+//			}
 			if (mr.getClassId() == referencingClassId
 					&& mr.getConstantPoolIndex() == constantPoolIndex) {
 				retval = aMemberReferenceTranslationMap.get(mr);
@@ -1321,8 +1354,12 @@ public class LinkModel {
 		}
 
 		if (retval == null) {
-			NewLinker.exit("Cannot translate reference: " + referencingClassId + "."
-					+ constantPoolIndex, 1);
+			retval = new MemberReference("nn", new Signature("nn", "I"), 8, 9);
+			// NewLinker.exit("Cannot translate reference: " + referencingClassId + "."
+			// + constantPoolIndex, 1);
+			System.err.println("Cannot translate reference: " + referencingClassId + "."
+					+ constantPoolIndex);
+			new Exception().printStackTrace();
 		}
 
 		return retval;
