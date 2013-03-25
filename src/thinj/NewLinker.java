@@ -332,25 +332,10 @@ public class NewLinker {
 			if (referencedClass.startsWith("[")) {
 				classInSuite = loadArray(referencedClass);
 			} else {
-				// InputStream is = aClassReader.getClassFileReader(referencedClass);
-				// JavaClass jc = null;
-				// JavaClass superClass = null;
-				// JavaClass[] allInterfaces = null;
-				// try {
-				// jc = new ClassParser(is, referencedClass).parse();
-				// superClass = jc.getSuperClass();
-				// allInterfaces = jc.getAllInterfaces();
-				// } catch (Exception e) {
-				// System.err.println("Failed loading class: " + referencedClass);
-				// e.printStackTrace();
-				// System.exit(1);
-				// }
-				// NYT
 				JavaClass jc = readClassFromFile(referencedClass);
 				JavaClass superClass = readClassFromFile(jc.getSuperclassName());
-				JavaClass[] allInterfaces = readClassesFromFiles(jc.getInterfaceNames());
-				// NYT
-
+				JavaClass[] allInterfaces = readClassesFromFiles(jc.getInterfaceNames());				
+				
 				boolean isJavaLangObject = referencedClass.equals("java/lang/Object");
 				// Register the class in our model:
 				classInSuite = aLinkModel.createClassInSuite(jc.getClassName(), aClassId++,
@@ -863,9 +848,13 @@ public class NewLinker {
 						ArithmeticException.class.getName(),
 						Class.class.getName(), 
 						ClassCastException.class.getName(),
+						IllegalMonitorStateException.class.getName(),
 						NegativeArraySizeException.class.getName(),
 						NullPointerException.class.getName(), 
 						OutOfMemoryError.class.getName(),
+						Object.class.getName(),
+						Object.class.getName() + "$Monitor",
+						Object.class.getName() + "$WaitElement",
 //						IllegalArgumentException.class.getName(),
 //						IllegalThreadStateException.class.getName(),
 						String.class.getName(), 
@@ -877,15 +866,25 @@ public class NewLinker {
 				        "java.lang.Class                          aClassId       I",
 				        "java.lang.Class                          aAllClasses    [Ljava/lang/Class;",
 				        "java.lang.ClassCastException             <init>         ()V",				        
+				        "java.lang.IllegalMonitorStateException   <init>         (Ljava/lang/String;)V",
 //				        "java.lang.IllegalArgumentException       <init>         (Ljava/lang/String;)V",
 //				        "java.lang.IllegalThreadStateException    <init>         (Ljava/lang/String;)V",
 				        "java.lang.NullPointerException           <init>         ()V",
+				        
+				        "java.lang.Object                         aMonitor       Ljava/lang/Object$Monitor;",
+				        "java.lang.Object$Monitor                 aWaitSet       Ljava/lang/Object$WaitElement;",
+				        "java.lang.Object$Monitor                 aOwner         Ljava/lang/Thread;",
+				        "java.lang.Object$Monitor                 aLockCount     I",
+				        "java.lang.Object$WaitElement             aWaiting       Ljava/lang/Thread;",
+				        "java.lang.Object$WaitElement             aNext          Ljava/lang/Object$WaitElement;",				        
+				        
 				        "java.lang.OutOfMemoryError               <init>         ()V",
 				        "java.lang.OutOfMemoryError               getInstance    ()Ljava/lang/OutOfMemoryError;",
 				        "java.lang.NegativeArraySizeException     <init>         ()V",
 				        "java.lang.String                         value          [C",
 
 				        "java.lang.Thread                         aAllThreads    Ljava/lang/Thread;",
+				        "java.lang.Thread                         aBlockingObject  Ljava/lang/Object;",				        
 						"java.lang.Thread                         aContext       [B",
 				        "java.lang.Thread                         aCurrentThread Ljava/lang/Thread;",
 				        "java.lang.Thread                         aNextThread    Ljava/lang/Thread;",
@@ -893,7 +892,7 @@ public class NewLinker {
 				        "java.lang.Thread                         aState         I",
 				        "java.lang.Thread                         runFromNative  ()V",
 //				        "java.lang.Throwable                      aCause         Ljava/lang/String;",
-//				        "java.lang.Throwable                      aStackTrace    [I",				        
+//				        "java.lang.Throwable                      aStackTrace    [I",
 			        }, 
 					// @formatter:on
 					mainClass);

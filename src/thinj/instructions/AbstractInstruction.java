@@ -21,7 +21,7 @@ import thinj.linkmodel.Signature;
 
 public abstract class AbstractInstruction {
 	public static final String BYTECODE_PREFIX = "c_";
-	//private static final String C_FUNCTION_PREFIX = "f_";
+	// private static final String C_FUNCTION_PREFIX = "f_";
 
 	// registered instructions:
 	protected static HashMap<Integer, Class<? extends AbstractInstruction>> aInstructions = new HashMap<Integer, Class<? extends AbstractInstruction>>();
@@ -55,12 +55,11 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0x09, I_lconst_0.class);
 		aInstructions.put(0x0a, I_lconst_1.class);
 
-		
 		aInstructions.put(0x10, I_bipush.class);
 		aInstructions.put(0x11, I_sipush.class);
 		aInstructions.put(0x12, I_ldc.class);
 		aInstructions.put(0x13, I_ldc_w.class);
-		aInstructions.put(0x14, I_ldc2_w.class);	
+		aInstructions.put(0x14, I_ldc2_w.class);
 		aInstructions.put(0x15, I_iload.class);
 		aInstructions.put(0x16, I_lload.class);
 
@@ -68,7 +67,7 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0x1a, I_iload_0.class);
 		aInstructions.put(0x1b, I_iload_1.class);
 		aInstructions.put(0x1c, I_iload_2.class);
-		aInstructions.put(0x1d, I_iload_3.class);		
+		aInstructions.put(0x1d, I_iload_3.class);
 		aInstructions.put(0x1e, I_lload_0.class);
 		aInstructions.put(0x1f, I_lload_1.class);
 		aInstructions.put(0x20, I_lload_2.class);
@@ -97,7 +96,7 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0x40, I_lstore_1.class);
 		aInstructions.put(0x41, I_lstore_2.class);
 		aInstructions.put(0x42, I_lstore_3.class);
-		
+
 		aInstructions.put(0x4b, I_astore_0.class);
 		aInstructions.put(0x4c, I_astore_1.class);
 		aInstructions.put(0x4d, I_astore_2.class);
@@ -138,7 +137,7 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0x79, I_lshl.class);
 		aInstructions.put(0x7a, I_ishr.class);
 		aInstructions.put(0x7b, I_lshr.class);
-		
+
 		aInstructions.put(0x7d, I_lushr.class);
 		aInstructions.put(0x7e, I_iand.class);
 		aInstructions.put(0x7f, I_land.class);
@@ -150,12 +149,12 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0x85, I_i2l.class);
 
 		aInstructions.put(0x88, I_l2i.class);
-		
+
 		aInstructions.put(0x91, I_i2b.class);
 		aInstructions.put(0x92, I_i2c.class);
 
-		aInstructions.put(0x94, I_lcmp.class);		
-		
+		aInstructions.put(0x94, I_lcmp.class);
+
 		aInstructions.put(0x99, I_ifeq.class);
 		aInstructions.put(0x9a, I_ifne.class);
 
@@ -194,8 +193,8 @@ public abstract class AbstractInstruction {
 		aInstructions.put(0xbf, I_athrow.class);
 		aInstructions.put(0xc0, I_checkcast.class);
 		aInstructions.put(0xc1, I_instanceof.class);
-		// aInstructions.put(0xc2, I_monitorenter.class);
-		// aInstructions.put(0xc3, I_monitorexit.class);
+		aInstructions.put(0xc2, I_monitorenter.class);
+		aInstructions.put(0xc3, I_monitorexit.class);
 
 		aInstructions.put(0xc6, I_ifnull.class);
 		aInstructions.put(0xc7, I_ifnonnull.class);
@@ -223,7 +222,6 @@ public abstract class AbstractInstruction {
 	public void registerDependencies(LinkModel linkModel, int referencingClassId,
 			MethodInClass mic, IntInABox constantPoolLength) {
 	}
-
 
 	/**
 	 * This method handles a reference to a member. 'handles' means that when this method returns
@@ -391,55 +389,39 @@ public abstract class AbstractInstruction {
 	 * @param out the stream to print to
 	 */
 	/*
-	public static void generateInstructionTable(PrintStream out) {
-		out.println("const insWithOpcode const allInstructions[] = {");
-		for (Integer newOpcode : aReverseInstructionMapping.keySet()) {
-			int oldOpcode = aReverseInstructionMapping.get(newOpcode);
-			AbstractInstruction ins = lookup(oldOpcode);
-			if (ins != null) {
-				out.println(String.format("    {%-18s 0x%02x, %-18s %d},",
-						C_FUNCTION_PREFIX + ins.getShortForm() + ",", newOpcode,
-						"\"" + ins.getShortForm() + "\",", ins.aSize));
-				// } else {
-				// out.println(String.format("    {%-18s 0x%02x, %-18s %d},", "f_unused,", opcode,
-				// "\"unused\",", 1));
-			}
-		}
-		out.println("};");
-
-		out.println("// For testing simpler array lookup:");
-		out.println("const instruction const allIns[] = {");
-		for (Integer newOpcode : aReverseInstructionMapping.keySet()) {
-			int oldOpcode = aReverseInstructionMapping.get(newOpcode);
-			AbstractInstruction ins = lookup(oldOpcode);
-			if (ins != null) {
-				out.println("    " + C_FUNCTION_PREFIX + ins.getShortForm() + ",");
-				// } else {
-				// out.println(String.format("    {%-18s 0x%02x, %-18s %d},", "f_unused,", opcode,
-				// "\"unused\",", 1));
-			}
-		}
-		out.println("};");
-
-	}
-*/
+	 * public static void generateInstructionTable(PrintStream out) {
+	 * out.println("const insWithOpcode const allInstructions[] = {"); for (Integer newOpcode :
+	 * aReverseInstructionMapping.keySet()) { int oldOpcode =
+	 * aReverseInstructionMapping.get(newOpcode); AbstractInstruction ins = lookup(oldOpcode); if
+	 * (ins != null) { out.println(String.format("    {%-18s 0x%02x, %-18s %d},", C_FUNCTION_PREFIX
+	 * + ins.getShortForm() + ",", newOpcode, "\"" + ins.getShortForm() + "\",", ins.aSize)); // }
+	 * else { // out.println(String.format("    {%-18s 0x%02x, %-18s %d},", "f_unused,", opcode, //
+	 * "\"unused\",", 1)); } } out.println("};");
+	 * 
+	 * out.println("// For testing simpler array lookup:");
+	 * out.println("const instruction const allIns[] = {"); for (Integer newOpcode :
+	 * aReverseInstructionMapping.keySet()) { int oldOpcode =
+	 * aReverseInstructionMapping.get(newOpcode); AbstractInstruction ins = lookup(oldOpcode); if
+	 * (ins != null) { out.println("    " + C_FUNCTION_PREFIX + ins.getShortForm() + ","); // } else
+	 * { // out.println(String.format("    {%-18s 0x%02x, %-18s %d},", "f_unused,", opcode, //
+	 * "\"unused\",", 1)); } } out.println("};");
+	 * 
+	 * }
+	 */
 	/**
 	 * This method will print c-function forward declarations to the printstream 'out'
 	 * 
 	 * @param out the stream to print to
 	 */
 	/*
-	public static void generateForwardDeclarations(PrintStream out) {
-		for (Integer newOpcode : aReverseInstructionMapping.keySet()) {
-			int oldOpcode = aReverseInstructionMapping.get(newOpcode);
-			AbstractInstruction ins = lookup(oldOpcode);
-			if (ins != null) {
-				out.println("void " + C_FUNCTION_PREFIX + ins.getShortForm() + "(void);");
-			}
-		}
-
-	}
-*/
+	 * public static void generateForwardDeclarations(PrintStream out) { for (Integer newOpcode :
+	 * aReverseInstructionMapping.keySet()) { int oldOpcode =
+	 * aReverseInstructionMapping.get(newOpcode); AbstractInstruction ins = lookup(oldOpcode); if
+	 * (ins != null) { out.println("void " + C_FUNCTION_PREFIX + ins.getShortForm() + "(void);"); }
+	 * }
+	 * 
+	 * }
+	 */
 	/**
 	 * This method returns the short form of the instruction
 	 * 
@@ -626,7 +608,8 @@ public abstract class AbstractInstruction {
 		}
 
 		/**
-		 * This method extracts the constant pool index identifying the referenced constant 
+		 * This method extracts the constant pool index identifying the referenced constant
+		 * 
 		 * @return The constant pool index identifying the referenced constant
 		 */
 		protected abstract int getLDCReference();
@@ -1498,24 +1481,23 @@ public abstract class AbstractInstruction {
 		}
 	}
 
-	
 	public static class I_lcmp extends AbstractInstruction {
 		public I_lcmp() {
 			super(1);
 		}
 	}
 
-	// public static class I_monitorenter extends AbstractInstruction {
-	// public I_monitorenter() {
-	// super(1);
-	// }
-	// }
-	//
-	// public static class I_monitorexit extends AbstractInstruction {
-	// public I_monitorexit() {
-	// super(1);
-	// }
-	// }
+	public static class I_monitorenter extends AbstractInstruction {
+		public I_monitorenter() {
+			super(1);
+		}
+	}
+
+	public static class I_monitorexit extends AbstractInstruction {
+		public I_monitorexit() {
+			super(1);
+		}
+	}
 
 	/**
 	 * This method registers that this type of instruction shall be included in the suite

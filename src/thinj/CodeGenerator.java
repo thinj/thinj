@@ -369,9 +369,9 @@ public class CodeGenerator {
 		sectionHeader(aHeader, "Link Ids referenced by VM");
 		for (Member member : aVmRefSet) {
 			int classId = aLinkModel.getClassIdByName(member.getClassName());
-			MethodOrField x = aLinkModel.getMethodOrField(classId, member.getSignature().getName(),
+			MethodOrField mof = aLinkModel.getMethodOrField(classId, member.getSignature().getName(),
 					member.getSignature().getDescriptor());
-			aSuite.println("const u2 " + generateMemberLinkIdMacro(member) + " = " + x.getLinkId()
+			aSuite.println("const u2 " + generateMemberLinkIdMacro(member) + " = " + mof.getLinkId()
 					+ ";");
 			aHeader.println("extern const u2 " + generateMemberLinkIdMacro(member) + ";");
 		}
